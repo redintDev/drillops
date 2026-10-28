@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "drillops"
+version = "0.2.0"
+description = "Automated Database Restore Drill Runner and SOC2 Compliance Certifier"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Antigravity Agent", email = "agent@local.internal" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Topic :: Database",
+    "Topic :: System :: Systems Administration",
+]
+dependencies = []
+
+[project.scripts]
+drillops = "drillops.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["drillops*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+

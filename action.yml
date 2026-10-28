@@ -1,0 +1,87 @@
+name: "DrillOps Restore Verification Action"
+description: "Executes automated database restore drills and generates SOC2/ISO 27001 compliance certificates."
+author: "DrillOps"
+
+inputs:
+  backup-path:
+    description: "Path to database backup file (.dump, .sql, .sql.gz, .sqlite)"
+    required: true
+  database-type:
+    description: "Database engine ('sqlite' or 'postgres')"
+    required: false
+    default: "sqlite"
+  expected-tables:
+    description: "Comma-separated list of critical tables that must exist and contain data"
+    required: false
+    default: ""
+  output-dir:
+    description: "Directory where JSON and Markdown certificates will be saved"
+    required: false
+    default: "./certificates"
+  webhook-url:
+    description: "Optional generic webhook URL for incident alerting"
+    required: false
+    default: ""
+  slack-webhook:
+    description: "Optional Slack incoming webhook URL"
+    required: false
+    default: ""
+
+outputs:
+  certificate-id:
+    description: "Generated SOC2 Certificate ID"
+    value: ${{ steps.run-drill.outputs.certificate_id }}
+  restore-status:
+    description: "Overall restore drill status (PASSED or FAILED)"
+    value: ${{ steps.run-drill.outputs.restore_status }}
+  restore-rto-seconds:
+    description: "Measured Recovery Time Objective (RTO) in seconds"
+    value: ${{ steps.run-drill.outputs.restore_rto_seconds }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install DrillOps
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install .
+
+    - name: Execute Restore Drill
+      id: run-drill
+      shell: bash
+      run: |
+        CMD="drillops verify --backup \"${{ inputs.backup-path }}\" --type \"${{ inputs.database-type }}\" --out \"${{ inputs.output-dir }}\""
+        if [ -n "${{ inputs.expected-tables }}" ]; then
+          CMD="$CMD --tables \"${{ inputs.expected-tables }}\""
+        fi
+        if [ -n "${{ inputs.webhook-url }}" ]; then
+          CMD="$CMD --notify-webhook \"${{ inputs.webhook-url }}\""
+        fi
+        if [ -n "${{ inputs.slack-webhook }}" ]; then
+          CMD="$CMD --notify-slack \"${{ inputs.slack-webhook }}\""
+        fi
+
+        eval $CMD
+
+        CERT_FILE=$(ls -t ${{ inputs.output-dir }}/drill_cert_*.json 2>/dev/null | head -n 1)
+        if [ -f "$CERT_FILE" ]; then
+          CERT_ID=$(python -c "import json; print(json.load(open('$CERT_FILE'))['certificate_id'])")
+          STATUS=$(python -c "import json; print(json.load(open('$CERT_FILE'))['overall_status'])")
+          RTO=$(python -c "import json; print(json.load(open('$CERT_FILE'))['metrics']['recovery_time_objective_actual_seconds'])")
+          echo "certificate_id=$CERT_ID" >> $GITHUB_OUTPUT
+          echo "restore_status=$STATUS" >> $GITHUB_OUTPUT
+          echo "restore_rto_seconds=$RTO" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Upload Compliance Certificate Artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: drillops-certificates
+        path: ${{ inputs.output-dir }}

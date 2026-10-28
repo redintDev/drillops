@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DrillOps Cloudflare R2 Backup Verification",
+  "database_type": "postgres",
+  "backup_path": "./backups/r2_production_latest.dump",
+  "expected_tables": [
+    "accounts",
+    "transactions",
+    "api_keys"
+  ],
+  "assertion_rules": [
+    {
+      "name": "transaction_integrity_check",
+      "query": "SELECT count(*) FROM transactions WHERE status = 'completed';",
+      "operator": ">=",
+      "expected_value": 1,
+      "critical": true,
+      "description": "Ensure transactional ledger records are preserved"
+    }
+  ],
+  "drop_on_completion": true,
+  "output_dir": "./certificates"
+}

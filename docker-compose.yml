@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  # DrillOps Compliance Dashboard
+  dashboard:
+    build: .
+    container_name: drillops-dashboard
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    volumes:
+      - ./certificates:/certificates
+    command: ["serve", "--host", "0.0.0.0", "--port", "8787", "--out", "/certificates"]
+
+  # DrillOps Scheduled Daemon Watcher
+  watcher:
+    build: .
+    container_name: drillops-watcher
+    restart: unless-stopped
+    volumes:
+      - ./backups:/backups:ro
+      - ./certificates:/certificates
+    command: ["watch", "--dir", "/backups", "--type", "postgres", "--out", "/certificates"]

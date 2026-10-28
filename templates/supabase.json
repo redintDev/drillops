@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DrillOps Supabase Verification Template",
+  "database_type": "postgres",
+  "backup_path": "./backups/supabase_daily.dump",
+  "expected_tables": [
+    "auth.users",
+    "public.profiles",
+    "public.subscriptions"
+  ],
+  "assertion_rules": [
+    {
+      "name": "active_profiles_threshold",
+      "query": "SELECT count(*) FROM public.profiles WHERE updated_at IS NOT NULL;",
+      "operator": ">=",
+      "expected_value": 1,
+      "critical": true,
+      "description": "Ensure profile count matches expected baseline"
+    }
+  ],
+  "drop_on_completion": true,
+  "output_dir": "./certificates"
+}

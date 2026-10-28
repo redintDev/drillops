@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DrillOps Render PostgreSQL Backup Verification",
+  "database_type": "postgres",
+  "backup_path": "./backups/render_postgres_latest.sql.gz",
+  "expected_tables": [
+    "users",
+    "teams",
+    "projects"
+  ],
+  "assertion_rules": [
+    {
+      "name": "min_team_count",
+      "query": "SELECT count(*) FROM teams;",
+      "operator": ">=",
+      "expected_value": 1,
+      "critical": true
+    }
+  ],
+  "drop_on_completion": true,
+  "output_dir": "./certificates"
+}

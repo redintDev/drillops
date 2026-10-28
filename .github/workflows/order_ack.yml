@@ -1,0 +1,43 @@
+name: Commercial Order Auto-Responder
+
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  acknowledge_order:
+    name: Acknowledge Commercial License Order
+    runs-on: ubuntu-latest
+    if: >
+      contains(github.event.issue.labels.*.name, 'license-order') ||
+      contains(github.event.issue.title, '[License Order]')
+    steps:
+      - name: Post Order Confirmation Comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          COMMENT_BODY=$(cat << 'EOF'
+          ### 🛡️ DrillOps Commercial License Order Confirmation
+
+          Thank you for choosing **DrillOps** to secure and certify your database disaster recovery infrastructure!
+
+          Our automated operations desk has logged your order:
+          - **Status**: 🟡 Queued for Cryptographic Token Minting & Remittance Invoicing
+          - **Architecture**: 100% Air-Gapped Offline Verification (HMAC-SHA256 token, zero phone-home telemetry)
+          - **Deliverables**: Signed license token file (`drillops_license.key`), official remittance invoice (Stripe card checkout or corporate bank wire transfer), and executive onboarding setup guidance.
+
+          #### ⏱️ Fulfillment Timeline
+          - License keys and payment instructions are processed and attached directly to this ticket or emailed to your billing address within **1–2 business hours**.
+          - Need immediate testing right now? You can generate an instant 14-day Pro evaluation key anytime via our [Interactive Live Simulator](https://redintdev.github.io/drillops/#pricing).
+
+          *This confirmation was posted autonomously by DrillOps Operations.*
+          EOF
+          )
+
+          gh issue comment "$ISSUE_NUMBER" --body "$COMMENT_BODY"
+          gh issue edit "$ISSUE_NUMBER" --add-label "order-pending-fulfillment"

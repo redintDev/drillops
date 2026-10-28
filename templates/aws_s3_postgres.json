@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DrillOps AWS RDS PostgreSQL S3 Backup Verification",
+  "database_type": "postgres",
+  "backup_path": "./backups/rds_postgres_latest.sql.gz",
+  "expected_tables": [
+    "users",
+    "organizations",
+    "audit_logs"
+  ],
+  "assertion_rules": [
+    {
+      "name": "recent_audit_records_present",
+      "query": "SELECT count(*) FROM audit_logs WHERE created_at > NOW() - INTERVAL '30 days';",
+      "operator": ">=",
+      "expected_value": 1,
+      "critical": true,
+      "description": "Verify audit log integrity for SOC2 compliance"
+    }
+  ],
+  "drop_on_completion": true,
+  "output_dir": "./certificates"
+}

@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: "Interactive Landing Page & Online Trial Minting"
+    url: "https://redintdev.github.io/drillops/"
+    about: "Mint an instant 14-day Pro cryptographic trial token or simulate restore drills directly in your browser."
+  - name: "DrillOps Commercial Documentation & Pricing"
+    url: "https://github.com/redintDev/drillops/blob/main/projects/drillops/docs/COMMERCIAL_PRICING.md"
+    about: "Review licensing tiers ($79/yr Pro, $199/yr Enterprise), features, and offline zero-DRM validation."
