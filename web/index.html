@@ -92,10 +92,10 @@
             <div id="tab-content-action" class="hidden bg-slate-900/90 border border-slate-700/80 rounded-xl p-4 text-left font-mono text-xs shadow-2xl relative">
                 <div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-800">
                     <span class="text-indigo-400 font-semibold text-[11px]">.github/workflows/restore-drill.yml</span>
-                    <button onclick="navigator.clipboard.writeText(`- name: Verify Database Restore (SOC2 CC9.1)\n  uses: redintDev/drillops@v0.2.0\n  with:\n    database-type: postgres\n    backup-path: ./backups/prod.sql.gz\n    scan-pii: 'true'\n    max-rpo-hours: 24`); alert('Copied GitHub Action snippet!');" class="text-[11px] bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-2.5 py-1 rounded transition">Copy Snippet</button>
+                    <button onclick="navigator.clipboard.writeText(`- name: Verify Database Restore (SOC2 CC9.1)\n  uses: redintDev/drillops@v0.2.1\n  with:\n    database-type: postgres\n    backup-path: ./backups/prod.sql.gz\n    scan-pii: 'true'\n    max-rpo-hours: 24`); alert('Copied GitHub Action snippet!');" class="text-[11px] bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-2.5 py-1 rounded transition">Copy Snippet</button>
                 </div>
                 <pre class="text-slate-300 overflow-x-auto text-[11px] leading-relaxed"><code>- name: Verify Database Restore (SOC2 CC9.1)
-  uses: redintDev/drillops@v0.2.0
+  uses: redintDev/drillops@v0.2.1
   with:
     database-type: postgres # postgres, mysql, sqlite
     backup-path: ./backups/prod.sql.gz
@@ -105,8 +105,8 @@
 
             <!-- Tab 3: pip install -->
             <div id="tab-content-pip" class="hidden bg-slate-900/90 border border-slate-700/80 rounded-xl p-4 flex items-center justify-between font-mono text-xs md:text-sm shadow-2xl">
-                <span class="text-slate-300 text-left truncate"><span class="text-indigo-400">$</span> pip install drillops && drillops demo</span>
-                <button onclick="navigator.clipboard.writeText('pip install drillops && drillops demo'); alert('Copied pip install command!');" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3 py-1.5 rounded transition ml-2 shrink-0">Copy</button>
+                <span class="text-slate-300 text-left truncate"><span class="text-indigo-400">$</span> pip install "git+https://github.com/redintDev/drillops.git" && drillops demo</span>
+                <button onclick="navigator.clipboard.writeText('pip install &quot;git+https://github.com/redintDev/drillops.git&quot; && drillops demo'); alert('Copied pip git install command!');" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3 py-1.5 rounded transition ml-2 shrink-0">Copy</button>
             </div>
         </div>
 
@@ -304,7 +304,7 @@
                         <li>✓ Unlimited local drill runs</li>
                     </ul>
                 </div>
-                <button onclick="navigator.clipboard.writeText('pip install drillops && drillops demo'); alert('Copied quickstart command: pip install drillops && drillops demo');" class="mt-8 w-full py-2.5 rounded-lg border border-slate-700 hover:bg-slate-800 text-xs font-semibold text-white transition">Copy CLI Install Command</button>
+                <button onclick="navigator.clipboard.writeText('curl -fsSL https://raw.githubusercontent.com/redintDev/drillops/main/install.sh | bash'); alert('Copied quickstart command: curl -fsSL https://raw.githubusercontent.com/redintDev/drillops/main/install.sh | bash');" class="mt-8 w-full py-2.5 rounded-lg border border-slate-700 hover:bg-slate-800 text-xs font-semibold text-white transition">Copy CLI Install Command</button>
             </div>
 
             <!-- Tier 2: Self-Hosted Pro -->
@@ -442,30 +442,39 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Company / Organization</label>
-                    <input type="text" id="purchase-company" placeholder="Acme Inc." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Company / Organization Identifier</label>
+                    <input type="text" id="purchase-company" placeholder="Acme Inc. or GitHub handle" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">Billing Email</label>
-                    <input type="email" id="purchase-email" placeholder="billing@acme.com" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-xs font-semibold text-slate-300">Billing Email (Optional / Confidential)</label>
+                        <span class="text-[10px] text-emerald-400">🔒 Never posted to public issues</span>
+                    </div>
+                    <input type="email" id="purchase-email" placeholder="billing@acme.com (for direct email submission)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                    <p class="text-[10px] text-slate-400 mt-1">If submitting via GitHub, your email is omitted from the public ticket to preserve privacy.</p>
                 </div>
                 <button onclick="submitOrderInquiry()" class="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition flex items-center justify-center gap-2">
-                    <span>📄</span> Prepare Order Inquiry & GitHub Issue
+                    <span>📄</span> Prepare Order Inquiry
                 </button>
             </div>
 
             <div id="purchase-result" class="hidden mt-4 space-y-3">
                 <div class="p-3 bg-indigo-950/40 border border-indigo-800/50 rounded-xl text-xs text-indigo-300">
-                    ✔ <strong>Order Inquiry Prepared!</strong> Submit below via GitHub Issues to receive your official invoice and cryptographically signed license key.
+                    ✔ <strong>Order Inquiry Prepared!</strong> Choose your preferred submission channel below:
                 </div>
                 <div class="p-3 bg-slate-950 rounded-lg border border-slate-800 text-xs font-mono text-slate-300 space-y-1">
                     <div>Order Reference: <span id="purchase-order-id" class="text-amber-400 font-bold">DRILL-ORD-0000</span></div>
                     <div>Pricing: <span id="purchase-price-display" class="text-white">$79.00 USD / year</span></div>
                     <div>Fulfillment: Signed Ed25519 cryptographic license key delivered upon invoice.</div>
                 </div>
-                <a id="purchase-github-btn" href="https://github.com/redintDev/drillops/issues/new?template=commercial_license.md" target="_blank" class="block text-center w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2">
-                    <span>🐙</span> Submit Order via GitHub Issue (Confirms Inquiry)
-                </a>
+                <div class="space-y-2">
+                    <a id="purchase-github-btn" href="https://github.com/redintDev/drillops/issues/new?template=commercial_license.md" target="_blank" class="block text-center w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2">
+                        <span>🐙</span> Submit via GitHub Issue (Public Handle Only)
+                    </a>
+                    <a id="purchase-email-btn" href="mailto:abdellatifaamrani4@gmail.com" class="block text-center w-full py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-bold text-white transition flex items-center justify-center gap-2">
+                        <span>✉️</span> Submit Privately via Email (Confidential Invoicing)
+                    </a>
+                </div>
                 <button onclick="copyOrderDetails()" class="w-full py-2 rounded-lg border border-slate-700 hover:bg-slate-800 text-xs font-semibold text-slate-300 transition">📋 Copy Order Summary</button>
             </div>
         </div>
@@ -640,20 +649,39 @@
             document.getElementById('purchase-order-id').innerText = orderId;
             document.getElementById('purchase-price-display').innerText = `${price}.00 USD / year`;
 
-            // GitHub Issue Link Generation with pre-filled details
+            // GitHub Issue Link Generation with pre-filled details (privacy-preserving: email omitted from public issue)
             const ghTitle = encodeURIComponent(`[License Order Inquiry]: ${company} - ${tier.toUpperCase()}`);
             const ghBody = encodeURIComponent(
                 `### 🛡️ Commercial License Order Inquiry\n\n` +
                 `- **Order Reference**: ${orderId}\n` +
-                `- **Company / Organization**: ${company}\n` +
-                `- **Billing Email**: ${email}\n` +
+                `- **Company / Public Handle**: ${company}\n` +
                 `- **Selected Tier**: DrillOps ${tier.toUpperCase()} (${price}/yr)\n` +
                 `- **Database Targets**: ${targets}\n\n` +
-                `*Please generate our official invoice and cryptographic Ed25519 license token.*`
+                `*Privacy Notice: Billing email is omitted from this public issue. Please reply to this issue or email abdellatifaamrani4@gmail.com with Order Reference ${orderId} for confidential remittance and license issuance.*`
             );
             const ghUrl = `https://github.com/redintDev/drillops/issues/new?template=commercial_license.md&title=${ghTitle}&body=${ghBody}`;
 
+            // Direct confidential email link
+            const mailSubject = encodeURIComponent(`[DrillOps Order ${orderId}] Commercial License Inquiry: ${company}`);
+            const mailBody = encodeURIComponent(
+                `Hello DrillOps Sales,\n\n` +
+                `We would like to request an official invoice and cryptographic Ed25519 license token for DrillOps.\n\n` +
+                `Order Details:\n` +
+                `- Order Reference: ${orderId}\n` +
+                `- Company / Organization: ${company}\n` +
+                `- Billing / Contact Email: ${email}\n` +
+                `- Selected Tier: DrillOps ${tier.toUpperCase()} (${price}/yr)\n` +
+                `- Target Count: ${targets}\n\n` +
+                `Please send payment instructions and offline license fulfillment.\n\n` +
+                `Thank you!`
+            );
+            const mailUrl = `mailto:abdellatifaamrani4@gmail.com?subject=${mailSubject}&body=${mailBody}`;
+
             document.getElementById('purchase-github-btn').href = ghUrl;
+            const emailBtn = document.getElementById('purchase-email-btn');
+            if (emailBtn) {
+                emailBtn.href = mailUrl;
+            }
             document.getElementById('purchase-form').classList.add('hidden');
             document.getElementById('purchase-result').classList.remove('hidden');
         }

@@ -8,7 +8,6 @@ import pytest
 from drillops.daemon.orchestrator import MultiTargetOrchestrator, OrchestratorConfig, TargetDefinition
 from drillops.generator.synthetic import SyntheticDataGenerator
 from drillops.licensing import LicenseTier, LicenseValidator
-from tests.test_licensing import OFFICIAL_PRO_TOKEN
 
 
 def test_orchestrator_config_from_dict():
@@ -67,7 +66,13 @@ def test_orchestrator_community_tier_limits_to_one_target():
         assert "t2" not in results
 
 
-def test_orchestrator_pro_tier_executes_multiple_targets():
+def test_orchestrator_pro_tier_executes_multiple_targets(monkeypatch):
+    from tests.test_licensing import _TEST_PK_HEX, _mint_test_v2_token
+
+    test_token = _mint_test_v2_token(tier="pro", targets=10)
+    monkeypatch.setenv("DRILLOPS_LICENSE_KEY", test_token)
+    pro_validator = LicenseValidator(public_key=_TEST_PK_HEX)
+
     with tempfile.TemporaryDirectory() as tmpdir:
         t1_dir = os.path.join(tmpdir, "t1")
         t2_dir = os.path.join(tmpdir, "t2")
@@ -85,11 +90,7 @@ def test_orchestrator_pro_tier_executes_multiple_targets():
             output_dir=out_dir,
         )
 
-        class ProValidator(LicenseValidator):
-            def validate_key(self, token=None):
-                return super().validate_key(OFFICIAL_PRO_TOKEN)
-
-        orchestrator = MultiTargetOrchestrator(cfg, license_validator=ProValidator())
+        orchestrator = MultiTargetOrchestrator(cfg, license_validator=pro_validator)
         results = orchestrator.run_all_once()
 
         assert "t1" in results

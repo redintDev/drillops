@@ -191,11 +191,12 @@ def test_cli_watch_with_s3_uri(tmp_path, monkeypatch):
 
 def test_cli_version(capsys):
     import pytest
+    from drillops import __version__
     from drillops.cli import main
     with pytest.raises(SystemExit) as exc_info:
         main(["--version"])
     assert exc_info.value.code == 0
     captured = capsys.readouterr()
-    assert "drillops 0.2.1" in captured.out
+    assert f"drillops {__version__}" in captured.out
 
 

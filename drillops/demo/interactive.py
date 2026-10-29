@@ -17,9 +17,10 @@ class InteractiveDemoRunner:
 
     @staticmethod
     def print_banner():
-        banner = """
+        from drillops import __version__
+        banner = f"""
 ================================================================================
-  🛡️  DRILLOPS INTERACTIVE DEMONSTRATION & QUICKSTART (v0.2.1)
+  🛡️  DRILLOPS INTERACTIVE DEMONSTRATION & QUICKSTART (v{__version__})
 ================================================================================
   "Schrödinger's Backup: The condition of any backup is unknown until you try
    to restore it. DrillOps verifies backups in isolated sandboxes continuously."

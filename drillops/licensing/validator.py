@@ -2,6 +2,19 @@
 
 Validates authentic customer licenses offline using asymmetric Ed25519 public-key
 cryptography. Contains no private signing keys or minting secrets.
+
+Architectural Note on Offline Evaluation Trial Boundaries:
+DrillOps evaluation trials (DRILLOPS-V1) use an offline cryptographic verification
+model designed to operate without phone-home telemetry or remote network dependencies.
+In an offline environment without centralized identity or remote server checks,
+local regeneration of 14-day evaluation tokens cannot be prevented purely by client math.
+However, evaluation tokens are cryptographically bounded:
+1. Capped strictly at 5 database targets.
+2. Capped strictly at 14 days maximum validity.
+3. Enterprise-exclusive capabilities are strictly forbidden and rejected.
+4. All generated certificates and compliance dossiers are indelibly branded
+   with '[EVALUATION TRIAL]'. SOC 2 auditors require official, unbranded, cryptographically
+   signed licenses (DRILLOPS-V2), establishing an unambiguous commercial incentive for genuine conversion.
 """
 
 import base64
@@ -10,7 +23,7 @@ import hashlib
 import hmac
 import json
 import os
-from typing import Optional, Tuple
+from typing import Optional, Set, Tuple
 
 from drillops.licensing.crypto import (
     DRILLOPS_PUBLIC_KEY,
@@ -18,6 +31,48 @@ from drillops.licensing.crypto import (
     verify_ed25519,
 )
 from drillops.licensing.models import LicenseInfo, LicenseTier
+
+# Explicitly revoked / disclosed fixture license IDs (SEC-002 / REC-006)
+REVOKED_LICENSE_IDS: Set[str] = {
+    "LIC-PRO-ABC7801E",
+    "LIC-ENT-E55FC6BE",
+    "LIC-PRO-D6CC1B02",
+    "LIC-PRO-A1B2C3D4",
+}
+
+# Standard feature matrices per tier (REC-001)
+COMMUNITY_FEATURES: Set[str] = {
+    "single_target_restore",
+    "sqlite_engine",
+    "postgres_engine",
+    "mysql_engine",
+    "mariadb_engine",
+    "local_json_cert",
+}
+
+PRO_ALLOWED_FEATURES: Set[str] = COMMUNITY_FEATURES | {
+    "multi_target",
+    "soc2_audit_pack",
+    "custom_webhooks",
+    "slack_alerts",
+    "scan_pii",
+    "check_rpo",
+    "check_redundancy",
+    "check_pitr",
+    "check_binlog",
+    "html_report",
+}
+
+ENTERPRISE_EXCLUSIVE_FEATURES: Set[str] = {
+    "unlimited_targets",
+    "priority_support",
+    "white_label_dossier",
+    "ci_integration",
+    "enterprise_sso",
+    "airgapped_vault",
+    "compliance_telemetry_stream",
+    "custom_schema_drift",
+}
 
 
 class LicenseValidator:
@@ -46,7 +101,7 @@ class LicenseValidator:
                 issued_at="2026-01-01T00:00:00Z",
                 expires_at=None,
                 max_targets=1,
-                features=["single_target_restore", "sqlite_engine", "postgres_engine"],
+                features=sorted(COMMUNITY_FEATURES),
             )
             return True, info, None
 
@@ -94,6 +149,11 @@ class LicenseValidator:
         if not isinstance(data, dict):
             return False, None, "Invalid license payload structure. JSON object expected."
 
+        # Check Revocation Blacklist (REC-006)
+        raw_lic_id = str(data.get("id", "UNKNOWN")).strip()
+        if raw_lic_id in REVOKED_LICENSE_IDS:
+            return False, None, f"License key {raw_lic_id} has been revoked and is invalid."
+
         # Parse tier safely
         raw_tier = str(data.get("tier", "pro")).lower()
         try:
@@ -124,7 +184,9 @@ class LicenseValidator:
             except Exception:
                 return False, None, "Malformed expiration timestamp format in license token."
 
-        # Enforce strict security guardrails on evaluation trial keys
+        claimed_features = list(data.get("features", []))
+
+        # Enforce strict security guardrails on evaluation trial keys (REC-001)
         if is_eval_trial:
             if tier == LicenseTier.ENTERPRISE:
                 return False, None, "Evaluation trial key cannot authorize Enterprise tier. Official license required."
@@ -137,11 +199,25 @@ class LicenseValidator:
             if (exp_dt - iss_dt).total_seconds() > max_trial_duration_secs:
                 return False, None, "Evaluation trial key exceeds maximum allowed duration (14 days). Official license required."
 
+            # Explicitly disallow Enterprise-exclusive capabilities in evaluation trials
+            if any(f in ENTERPRISE_EXCLUSIVE_FEATURES for f in claimed_features):
+                return False, None, "Evaluation trial key cannot claim Enterprise-exclusive features. Official license required."
+
+        # Filter active features strictly based on authorized tier matrix
+        if tier == LicenseTier.COMMUNITY:
+            allowed_matrix = COMMUNITY_FEATURES
+        elif tier == LicenseTier.PRO or is_eval_trial:
+            allowed_matrix = PRO_ALLOWED_FEATURES
+        else:
+            allowed_matrix = PRO_ALLOWED_FEATURES | ENTERPRISE_EXCLUSIVE_FEATURES
+
+        active_features = [f for f in claimed_features if f in allowed_matrix]
+
         # Evaluation trials are hard-capped at 5 targets regardless of payload claims
         max_targets_claimed = int(data.get("max_targets", 5)) if str(data.get("max_targets", "")).isdigit() else 5
         max_targets_val = min(max_targets_claimed, 5) if is_eval_trial else max_targets_claimed
 
-        lic_id = str(data.get("id", "UNKNOWN"))
+        lic_id = raw_lic_id
         if is_eval_trial and not lic_id.endswith("[EVALUATION TRIAL]"):
             lic_id = f"{lic_id} [EVALUATION TRIAL]"
 
@@ -153,7 +229,7 @@ class LicenseValidator:
             issued_at=str(issued_str or ""),
             expires_at=str(expires_str) if expires_str else None,
             max_targets=max_targets_val,
-            features=list(data.get("features", [])),
+            features=active_features,
         )
 
         if info.is_expired:
@@ -162,10 +238,19 @@ class LicenseValidator:
         return True, info, None
 
     def is_feature_enabled(self, feature: str, token: Optional[str] = None) -> bool:
-        """Checks whether a specific feature is enabled under the current license."""
+        """Checks whether a specific feature is authorized and enabled under the current license."""
         valid, info, _ = self.validate_key(token)
         if not valid or not info:
             return False
+        # Base restore engines are always available in all valid tiers
         if feature in ("single_target_restore", "sqlite_engine", "postgres_engine"):
             return True
-        return feature in info.features
+        if info.tier == LicenseTier.COMMUNITY:
+            return feature in COMMUNITY_FEATURES and feature in info.features
+        elif info.tier == LicenseTier.PRO:
+            if feature in ENTERPRISE_EXCLUSIVE_FEATURES:
+                return False
+            return feature in PRO_ALLOWED_FEATURES and feature in info.features
+        elif info.tier == LicenseTier.ENTERPRISE:
+            return (feature in PRO_ALLOWED_FEATURES or feature in ENTERPRISE_EXCLUSIVE_FEATURES) and feature in info.features
+        return False

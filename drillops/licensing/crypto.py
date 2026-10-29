@@ -9,7 +9,7 @@ from typing import Optional
 
 # Official DrillOps Master Public Verification Key (Ed25519)
 # Used to verify authentic customer licenses offline.
-DRILLOPS_PUBLIC_KEY = "376c79b4d828606b1a14d11df0537fb4eb9ea4e8e8cb49ab900f3ca66d7b8a90"
+DRILLOPS_PUBLIC_KEY = "4d8e30c506b386e6e5efd8ee8da2464d853ea7a17483aa7fe0602c02d0a12b45"
 
 # Public evaluation trial secret (strictly limited to 14-day Pro evaluation)
 EVALUATION_TRIAL_SECRET = "drillops_eval_public_trial_2026"

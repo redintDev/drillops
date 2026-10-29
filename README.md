@@ -23,11 +23,11 @@ drillops demo
 # 1-Command Turnkey Installer (Linux, macOS, WSL)
 curl -sSL https://raw.githubusercontent.com/redintDev/drillops/main/install.sh | bash
 
-# Or install via pip
-pip install drillops
+# Or install directly with pip from GitHub
+pip install "git+https://github.com/redintDev/drillops.git"
 
-# Or install from source
-pip install -e ./projects/drillops
+# Or clone and install locally
+git clone https://github.com/redintDev/drillops.git && cd drillops && pip install -e .
 ```
 
 ---
