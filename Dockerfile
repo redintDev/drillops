@@ -1,7 +1,7 @@
 # Multi-stage minimal production image for DrillOps
 FROM python:3.12-slim as runtime
 
-LABEL maintainer="Antigravity Team"
+LABEL maintainer="DrillOps Team <https://github.com/redintDev/drillops>"
 LABEL description="DrillOps: Automated Database Restore Drill Runner & SOC2 Compliance Certifier"
 
 ENV PYTHONUNBUFFERED=1 \

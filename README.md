@@ -1,6 +1,13 @@
 # 🛡️ DrillOps: Automated Database Restore Drill Runner & SOC2 Certifier
 
+[![CI Test Suite](https://github.com/redintDev/drillops/actions/workflows/ci.yml/badge.svg)](https://github.com/redintDev/drillops/actions/workflows/ci.yml)
+[![Website](https://img.shields.io/badge/website-live-success)](https://redintdev.github.io/drillops/)
+[![GitHub Action](https://img.shields.io/badge/GitHub%20Action-v0.2-orange?logo=githubactions)](https://github.com/redintDev/drillops)
+[![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://github.com/redintDev/drillops)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
 > *"An untested backup is not a backup—it is merely a wish."*
+
 
 DrillOps is an autonomous database disaster recovery verification engine. It proves that database backups actually restore to completion *before* disaster strikes, measuring Recovery Time Objective (RTO) and compiling cryptographically signed, auditor-grade compliance evidence for SOC2 Type II, ISO 27001, and HIPAA audits.
 
