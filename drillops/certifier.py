@@ -3,6 +3,7 @@
 import json
 import os
 from typing import Dict, List
+from drillops import __version__
 from drillops.models import AssertionResult, DrillSummary
 
 
@@ -131,7 +132,7 @@ class CertificateGenerator:
             "",
             "---",
             "",
-            "*Drill executed autonomously by DrillOps Engine v0.1.0 in isolated environment.*",
+            f"*Drill executed autonomously by DrillOps Engine v{__version__} in isolated environment.*",
         ])
 
         return "\n".join(lines)

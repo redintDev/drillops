@@ -8,6 +8,8 @@ import os
 from typing import Any, Dict, List, Optional
 import zipfile
 
+from drillops import __version__
+
 
 @dataclass
 class ComplianceMetrics:
@@ -186,7 +188,7 @@ class AuditPackGenerator:
             f"3. **Zero Data Tampering**: Confirm that all evaluated assertion queries returned positive verification counts on record totals.",
             f"",
             f"---",
-            f"*Generated autonomously by DrillOps Engine v0.1.0*",
+            f"*Generated autonomously by DrillOps Engine v{__version__}*",
         ])
 
         return "\n".join(md)
@@ -322,7 +324,7 @@ class AuditPackGenerator:
 
         <!-- Footer / Signoff -->
         <div class="pt-6 border-t border-slate-800 text-xs text-slate-500 flex flex-col md:flex-row justify-between items-center gap-2">
-            <div>Verified autonomously via <strong>DrillOps v0.1.0</strong> | Tamper-evident cryptographic ledger</div>
+            <div>Verified autonomously via <strong>DrillOps v{__version__}</strong> | Tamper-evident cryptographic ledger</div>
             <div>Trust Services Criteria CC6.1, CC7.1, CC7.4 Compliant</div>
         </div>
     </div>

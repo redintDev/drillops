@@ -7,6 +7,7 @@ import socketserver
 import urllib.parse
 from typing import Dict, List, Optional
 
+from drillops import __version__
 from drillops.certifier import CertificateGenerator
 
 
@@ -355,7 +356,7 @@ class DrillOpsHTTPHandler(http.server.BaseHTTPRequestHandler):
 
         <!-- Footer -->
         <div class="mt-8 text-center text-xs text-gray-500">
-            DrillOps v0.1.0 • Running autonomously inside container sandbox • Zero external accounts required
+            DrillOps v{__version__} • Running autonomously inside container sandbox • Zero external accounts required
         </div>
     </div>
 </body>

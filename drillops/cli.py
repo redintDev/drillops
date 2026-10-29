@@ -270,7 +270,7 @@ def main(args: List[str] = None) -> int:
                 return 1
 
         print("================================================================")
-        print("  DRILLOPS: Automated Disaster Recovery Drill Engine v0.1.0     ")
+        print(f"  DRILLOPS: Automated Disaster Recovery Drill Engine v{__version__}     ")
         print("================================================================")
         print(f"Target Backup: {config.backup_path}")
         print(f"Database Engine: {config.database_type}")
