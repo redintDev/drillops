@@ -82,17 +82,20 @@ drillops audit-pack --cert-dir ./certificates --out audit_dossier.zip --days 90
 drillops orchestrate --config drillops_targets.json --once
 ```
 
-### 6. Inspect, Activate, or Mint Offline Licenses
+### 6. Inspect & Activate Offline Commercial Licenses
 ```bash
 # Inspect current license state and active tier limits
 drillops license info
 
-# Mint an offline cryptographically signed license token (CLI)
-drillops license mint --name "Acme Corp" --email "billing@acme.com" --tier enterprise --days 365 --targets 25
+# Verify an offline cryptographic license key token
+drillops license verify --key "DRILLOPS-V2.eyJpZCI6IkxJQy...<sig>"
 
 # Activate via environment variable:
-export DRILLOPS_LICENSE_KEY="DRILLOPS-V1.eyJpZCI6IkxJQy1QUk8...<sig>"
+export DRILLOPS_LICENSE_KEY="DRILLOPS-V2.eyJpZCI6IkxJQy...<sig>"
+drillops license info
 ```
+Generate free 14-day evaluation keys or request commercial Pro/Enterprise licenses at:
+👉 **[https://redintdev.github.io/drillops/](https://redintdev.github.io/drillops/)**
 
 ### 7. Turnkey GitHub Action
 Verify database restore drills automatically in your GitHub Actions CI/CD pipelines:

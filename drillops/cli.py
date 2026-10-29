@@ -74,15 +74,9 @@ def parse_args(args: List[str] = None):
     demo_parser.add_argument("--out", "-o", default="./demo_artifacts", help="Output directory for demo certificates")
 
     # 'license' subcommand
-    license_parser = subparsers.add_parser("license", help="Verify, inspect, or mint DrillOps commercial licenses")
-    license_parser.add_argument("action", choices=["verify", "info", "mint"], help="License action ('verify', 'info', or 'mint')")
+    license_parser = subparsers.add_parser("license", help="Verify or inspect DrillOps commercial licenses")
+    license_parser.add_argument("action", choices=["verify", "info"], help="License action ('verify' or 'info')")
     license_parser.add_argument("--key", "-k", help="License key token (or reads DRILLOPS_LICENSE_KEY)")
-    license_parser.add_argument("--name", help="Customer or organization name for license minting")
-    license_parser.add_argument("--email", help="Customer billing email address for license minting")
-    license_parser.add_argument("--tier", choices=["community", "pro", "enterprise"], default="pro", help="License tier for minting (default: pro)")
-    license_parser.add_argument("--days", type=int, default=365, help="Validity duration in days (default: 365, 0 for perpetual)")
-    license_parser.add_argument("--targets", type=int, default=10, help="Maximum allowed database targets (default: 10, -1 for unlimited)")
-    license_parser.add_argument("--out", "-o", help="Optional output file path to write the minted license key")
 
     # 'audit-pack' subcommand
     audit_parser = subparsers.add_parser("audit-pack", help="Generate an auditor-ready SOC2/ISO 27001 evidence package")
@@ -405,58 +399,27 @@ def main(args: List[str] = None) -> int:
         return 0
 
     elif parsed.command == "license":
-        if parsed.action == "mint":
-            from drillops.licensing import LicenseGenerator, LicenseTier
-            if not parsed.name or not parsed.email:
-                print("Error: --name and --email are required when minting a license.")
-                return 1
-            tier_enum = LicenseTier(parsed.tier.lower())
-            generator = LicenseGenerator()
-            token = generator.mint_license(
-                customer_name=parsed.name,
-                customer_email=parsed.email,
-                tier=tier_enum,
-                days_valid=parsed.days,
-                max_targets=parsed.targets if tier_enum != LicenseTier.ENTERPRISE else -1,
-            )
-            print("================================================================")
-            print("  DRILLOPS COMMERCIAL LICENSE ISSUED                             ")
-            print("================================================================")
-            print(f"  Tier:           {tier_enum.value.upper()}")
-            print(f"  Licensed To:    {parsed.name} <{parsed.email}>")
-            print(f"  Validity:       {parsed.days} days" if parsed.days > 0 else "  Validity:       Perpetual")
-            print(f"  Max Targets:    {parsed.targets if tier_enum != LicenseTier.ENTERPRISE else 'Unlimited'}")
-            print("----------------------------------------------------------------")
-            print(f"  License Key:    {token}")
-            print("================================================================\n")
-            if parsed.out:
-                os.makedirs(os.path.dirname(os.path.abspath(parsed.out)), exist_ok=True)
-                with open(parsed.out, "w", encoding="utf-8") as f:
-                    f.write(token.strip() + "\n")
-                print(f"📄 Saved license key to: {parsed.out}")
-            return 0
+        from drillops.licensing import LicenseValidator
+        validator = LicenseValidator()
+        valid, info, error = validator.validate_key(parsed.key)
+        print("================================================================")
+        print("  DRILLOPS LICENSE STATUS                                       ")
+        print("================================================================")
+        if not valid:
+            print(f"  Status:         ❌ INVALID / EXPIRED")
+            print(f"  Error:          {error}")
+            return 1
         else:
-            from drillops.licensing import LicenseValidator
-            validator = LicenseValidator()
-            valid, info, error = validator.validate_key(parsed.key)
-            print("================================================================")
-            print("  DRILLOPS LICENSE STATUS                                       ")
-            print("================================================================")
-            if not valid:
-                print(f"  Status:         ❌ INVALID / EXPIRED")
-                print(f"  Error:          {error}")
-                return 1
-            else:
-                print(f"  Status:         🟢 VALID")
-                print(f"  License ID:     {info.license_id}")
-                print(f"  Tier:           {info.tier.value.upper()}")
-                print(f"  Licensed To:    {info.customer_name} <{info.customer_email}>")
-                print(f"  Issued At:      {info.issued_at}")
-                print(f"  Expires:        {info.expires_at or 'Perpetual'}")
-                print(f"  Max Targets:    {info.max_targets if info.max_targets > 0 else 'Unlimited'}")
-                print(f"  Active Features: {', '.join(info.features)}")
-            print("================================================================\n")
-            return 0
+            print(f"  Status:         🟢 VALID")
+            print(f"  License ID:     {info.license_id}")
+            print(f"  Tier:           {info.tier.value.upper()}")
+            print(f"  Licensed To:    {info.customer_name} <{info.customer_email}>")
+            print(f"  Issued At:      {info.issued_at}")
+            print(f"  Expires:        {info.expires_at or 'Perpetual'}")
+            print(f"  Max Targets:    {info.max_targets if info.max_targets > 0 else 'Unlimited'}")
+            print(f"  Active Features: {', '.join(info.features)}")
+        print("================================================================\n")
+        return 0
 
     elif parsed.command == "audit-pack":
         from drillops.compliance.audit_pack import AuditPackGenerator

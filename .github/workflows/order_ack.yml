@@ -28,7 +28,7 @@ jobs:
 
           Our automated operations desk has logged your order:
           - **Status**: 🟡 Queued for Cryptographic Token Minting & Remittance Invoicing
-          - **Architecture**: 100% Air-Gapped Offline Verification (HMAC-SHA256 token, zero phone-home telemetry)
+          - **Architecture**: 100% Air-Gapped Offline Verification (Asymmetric Ed25519 token, zero phone-home telemetry)
           - **Deliverables**: Signed license token file (`drillops_license.key`), official remittance invoice (Stripe card checkout or corporate bank wire transfer), and executive onboarding setup guidance.
 
           #### ⏱️ Fulfillment Timeline

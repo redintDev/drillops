@@ -1,4 +1,8 @@
-"""Cryptographic offline license token minting and validation."""
+"""Cryptographic offline license token validation for DrillOps.
+
+Validates authentic customer licenses offline using asymmetric Ed25519 public-key
+cryptography. Contains no private signing keys or minting secrets.
+"""
 
 import base64
 from datetime import datetime, timedelta, timezone
@@ -6,73 +10,29 @@ import hashlib
 import hmac
 import json
 import os
-from typing import Any, Dict, List, Optional, Tuple
-import uuid
+from typing import Optional, Tuple
 
+from drillops.licensing.crypto import (
+    DRILLOPS_PUBLIC_KEY,
+    EVALUATION_TRIAL_SECRET,
+    verify_ed25519,
+)
 from drillops.licensing.models import LicenseInfo, LicenseTier
-
-# Default HMAC verification seed (can be overridden via DRILLOPS_LICENSE_SECRET)
-DEFAULT_VERIFICATION_SECRET = "drillops_sec_k98a2f1b04d84c179c3b88d407e3a9c5"
-# Public evaluation trial secret (strictly limited to 14-day Pro evaluation)
-EVALUATION_TRIAL_SECRET = "drillops_eval_public_trial_2026"
-
-
-class LicenseGenerator:
-    """Mints cryptographically signed license keys for customer fulfillment."""
-
-    def __init__(self, secret: Optional[str] = None):
-        self.secret = secret or os.environ.get("DRILLOPS_LICENSE_SECRET", DEFAULT_VERIFICATION_SECRET)
-
-    def mint_license(
-        self,
-        customer_name: str,
-        customer_email: str,
-        tier: LicenseTier = LicenseTier.PRO,
-        days_valid: int = 365,
-        max_targets: int = 10,
-        features: Optional[List[str]] = None,
-    ) -> str:
-        """Constructs a signed license token string: DRILLOPS-V1.<payload_b64>.<hmac_sig>."""
-        now = datetime.now(timezone.utc)
-        expires_at = (now + timedelta(days=days_valid)).isoformat() if days_valid != 0 else None
-        lic_id = f"LIC-{tier.value.upper()[:3]}-{uuid.uuid4().hex[:8].upper()}"
-
-        default_features = ["multi_target", "soc2_audit_pack", "custom_webhooks", "slack_alerts"]
-        if tier == LicenseTier.ENTERPRISE:
-            default_features.extend(["unlimited_targets", "priority_support", "white_label_dossier"])
-
-        payload = {
-            "id": lic_id,
-            "tier": tier.value,
-            "name": customer_name,
-            "email": customer_email,
-            "issued_at": now.isoformat(),
-            "expires_at": expires_at,
-            "max_targets": max_targets,
-            "features": features if features is not None else default_features,
-        }
-
-        payload_json = json.dumps(payload, separators=(",", ":"))
-        payload_b64 = base64.urlsafe_b64encode(payload_json.encode("utf-8")).decode("utf-8").rstrip("=")
-
-        sig = hmac.new(
-            self.secret.encode("utf-8"),
-            payload_b64.encode("utf-8"),
-            hashlib.sha256,
-        ).hexdigest()
-
-        return f"DRILLOPS-V1.{payload_b64}.{sig}"
 
 
 class LicenseValidator:
-    """Validates license keys offline against cryptographic HMAC-SHA256 signature."""
+    """Validates license keys offline against asymmetric Ed25519 public key or restricted evaluation HMAC."""
 
-    def __init__(self, secret: Optional[str] = None):
-        self.secret = secret or os.environ.get("DRILLOPS_LICENSE_SECRET", DEFAULT_VERIFICATION_SECRET)
+    def __init__(self, public_key: Optional[str] = None):
+        self.public_key_hex = public_key or os.environ.get("DRILLOPS_PUBLIC_KEY", DRILLOPS_PUBLIC_KEY)
+        try:
+            self.public_key_bytes = bytes.fromhex(self.public_key_hex)
+        except Exception:
+            self.public_key_bytes = b""
 
     def validate_key(self, token: Optional[str] = None) -> Tuple[bool, Optional[LicenseInfo], Optional[str]]:
         """
-        Validates token integrity, signature match, and expiration date.
+        Validates token integrity, cryptographic signature, and validity period.
         Returns (is_valid, license_info, error_message).
         """
         raw_token = token or os.environ.get("DRILLOPS_LICENSE_KEY", "").strip()
@@ -91,21 +51,25 @@ class LicenseValidator:
             return True, info, None
 
         parts = raw_token.split(".")
-        if len(parts) != 3 or parts[0] != "DRILLOPS-V1":
-            return False, None, "Invalid license format. Expected format: DRILLOPS-V1.<payload>.<signature>"
+        if len(parts) != 3:
+            return False, None, "Invalid license format. Expected format: DRILLOPS-V2.<payload>.<signature>"
 
-        _, payload_b64, signature = parts
-
-        # Verify signature against primary secret or public evaluation trial secret
+        token_version, payload_b64, signature = parts
         is_eval_trial = False
-        expected_sig = hmac.new(
-            self.secret.encode("utf-8"),
-            payload_b64.encode("utf-8"),
-            hashlib.sha256,
-        ).hexdigest()
 
-        if not hmac.compare_digest(expected_sig, signature):
-            # Check if this is a web-generated evaluation trial key
+        if token_version == "DRILLOPS-V2":
+            # Asymmetric Ed25519 verification using official public verification key
+            try:
+                sig_bytes = bytes.fromhex(signature)
+            except ValueError:
+                return False, None, "Malformed cryptographic signature encoding. Hex signature required."
+
+            msg = payload_b64.encode("utf-8")
+            if not self.public_key_bytes or not verify_ed25519(self.public_key_bytes, msg, sig_bytes):
+                return False, None, "Cryptographic signature mismatch. License key may be forged, modified, or corrupted."
+
+        elif token_version == "DRILLOPS-V1":
+            # Legacy evaluation trial token signed with public evaluation secret
             eval_sig = hmac.new(
                 EVALUATION_TRIAL_SECRET.encode("utf-8"),
                 payload_b64.encode("utf-8"),
@@ -116,48 +80,80 @@ class LicenseValidator:
             else:
                 return False, None, "Cryptographic signature mismatch. License key may be forged or corrupted."
 
-        # Decode payload
+        else:
+            return False, None, f"Unsupported license token version: {token_version}. Expected DRILLOPS-V2 or DRILLOPS-V1."
+
+        # Decode and parse payload JSON safely
         try:
-            # Restore padding
             padded_b64 = payload_b64 + "=" * (-len(payload_b64) % 4)
             payload_json = base64.urlsafe_b64decode(padded_b64).decode("utf-8")
             data = json.loads(payload_json)
         except Exception as e:
             return False, None, f"Failed to decode license payload: {str(e)}"
 
+        if not isinstance(data, dict):
+            return False, None, "Invalid license payload structure. JSON object expected."
+
+        # Parse tier safely
+        raw_tier = str(data.get("tier", "pro")).lower()
         try:
-            tier = LicenseTier(data.get("tier", "pro"))
+            tier = LicenseTier(raw_tier)
         except ValueError:
             tier = LicenseTier.PRO
+
+        # Validate issuance and expiration timestamps
+        now = datetime.now(timezone.utc)
+        issued_str = data.get("issued_at")
+        expires_str = data.get("expires_at")
+
+        if issued_str:
+            try:
+                iss_dt = datetime.fromisoformat(str(issued_str).replace("Z", "+00:00"))
+                # Allow maximum 1 hour clock skew into the future
+                if iss_dt > now + timedelta(hours=1):
+                    return False, None, "License issuance date is in the future. Check system clock."
+            except Exception:
+                return False, None, "Malformed issuance timestamp format in license token."
+        else:
+            iss_dt = now
+
+        exp_dt = None
+        if expires_str:
+            try:
+                exp_dt = datetime.fromisoformat(str(expires_str).replace("Z", "+00:00"))
+            except Exception:
+                return False, None, "Malformed expiration timestamp format in license token."
 
         # Enforce strict security guardrails on evaluation trial keys
         if is_eval_trial:
             if tier == LicenseTier.ENTERPRISE:
                 return False, None, "Evaluation trial key cannot authorize Enterprise tier. Official license required."
-            
-            issued_str = data.get("issued_at")
-            expires_str = data.get("expires_at")
-            if not expires_str:
-                return False, None, "Evaluation trial key must have a defined expiration date."
-            try:
-                iss_dt = datetime.fromisoformat(issued_str.replace("Z", "+00:00"))
-                exp_dt = datetime.fromisoformat(expires_str.replace("Z", "+00:00"))
-                if (exp_dt - iss_dt).total_seconds() > 15 * 86400:
-                    return False, None, "Evaluation trial key exceeds maximum allowed duration (14 days). Official license required."
-            except Exception:
-                pass
 
-        max_targets_val = min(int(data.get("max_targets", 5)), 5) if is_eval_trial else int(data.get("max_targets", 5))
+            if not exp_dt:
+                return False, None, "Evaluation trial key must have a defined expiration date."
+
+            # Strictly cap evaluation duration at 14 days (with 1 hour clock skew allowance)
+            max_trial_duration_secs = 14 * 86400 + 3600
+            if (exp_dt - iss_dt).total_seconds() > max_trial_duration_secs:
+                return False, None, "Evaluation trial key exceeds maximum allowed duration (14 days). Official license required."
+
+        # Evaluation trials are hard-capped at 5 targets regardless of payload claims
+        max_targets_claimed = int(data.get("max_targets", 5)) if str(data.get("max_targets", "")).isdigit() else 5
+        max_targets_val = min(max_targets_claimed, 5) if is_eval_trial else max_targets_claimed
+
+        lic_id = str(data.get("id", "UNKNOWN"))
+        if is_eval_trial and not lic_id.endswith("[EVALUATION TRIAL]"):
+            lic_id = f"{lic_id} [EVALUATION TRIAL]"
 
         info = LicenseInfo(
-            license_id=f"{data.get('id', 'UNKNOWN')} [EVALUATION TRIAL]" if is_eval_trial else data.get("id", "UNKNOWN"),
+            license_id=lic_id,
             tier=tier,
-            customer_name=data.get("name", "Unknown"),
-            customer_email=data.get("email", "unknown@domain.com"),
-            issued_at=data.get("issued_at", ""),
-            expires_at=data.get("expires_at"),
+            customer_name=str(data.get("name", "Unknown")),
+            customer_email=str(data.get("email", "unknown@domain.com")),
+            issued_at=str(issued_str or ""),
+            expires_at=str(expires_str) if expires_str else None,
             max_targets=max_targets_val,
-            features=data.get("features", []),
+            features=list(data.get("features", [])),
         )
 
         if info.is_expired:

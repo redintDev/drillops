@@ -7,7 +7,8 @@ import pytest
 
 from drillops.daemon.orchestrator import MultiTargetOrchestrator, OrchestratorConfig, TargetDefinition
 from drillops.generator.synthetic import SyntheticDataGenerator
-from drillops.licensing import LicenseGenerator, LicenseTier, LicenseValidator
+from drillops.licensing import LicenseTier, LicenseValidator
+from tests.test_licensing import OFFICIAL_PRO_TOKEN
 
 
 def test_orchestrator_config_from_dict():
@@ -67,10 +68,6 @@ def test_orchestrator_community_tier_limits_to_one_target():
 
 
 def test_orchestrator_pro_tier_executes_multiple_targets():
-    secret = "orch-test-secret"
-    lic_gen = LicenseGenerator(secret=secret)
-    pro_token = lic_gen.mint_license("Pro Customer", "pro@corp.com", LicenseTier.PRO, max_targets=10)
-
     with tempfile.TemporaryDirectory() as tmpdir:
         t1_dir = os.path.join(tmpdir, "t1")
         t2_dir = os.path.join(tmpdir, "t2")
@@ -89,10 +86,8 @@ def test_orchestrator_pro_tier_executes_multiple_targets():
         )
 
         class ProValidator(LicenseValidator):
-            def __init__(self):
-                super().__init__(secret=secret)
             def validate_key(self, token=None):
-                return super().validate_key(pro_token)
+                return super().validate_key(OFFICIAL_PRO_TOKEN)
 
         orchestrator = MultiTargetOrchestrator(cfg, license_validator=ProValidator())
         results = orchestrator.run_all_once()
