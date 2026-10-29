@@ -1,6 +1,10 @@
 name: "DrillOps Restore Verification Action"
 description: "Executes automated database restore drills and generates SOC2/ISO 27001 compliance certificates."
 author: "DrillOps"
+branding:
+  icon: "shield"
+  color: "green"
+
 
 inputs:
   backup-path:
