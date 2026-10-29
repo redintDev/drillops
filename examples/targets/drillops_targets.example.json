@@ -1,0 +1,48 @@
+{
+  "output_dir": "./certificates",
+  "targets": [
+    {
+      "name": "production-postgres",
+      "database_type": "postgres",
+      "storage_type": "local",
+      "storage_path": "/var/backups/postgres",
+      "expected_tables": [
+        "users",
+        "accounts",
+        "billing_subscriptions",
+        "audit_logs"
+      ],
+      "assertion_rules": [
+        {
+          "name": "users_min_rows",
+          "rule_type": "min_rows",
+          "table": "users",
+          "min_count": 100
+        }
+      ]
+    },
+    {
+      "name": "analytics-mysql",
+      "database_type": "mysql",
+      "storage_type": "local",
+      "storage_path": "/var/backups/mysql",
+      "expected_tables": [
+        "events",
+        "pageviews",
+        "cohorts"
+      ],
+      "assertion_rules": []
+    },
+    {
+      "name": "edge-sqlite",
+      "database_type": "sqlite",
+      "storage_type": "local",
+      "storage_path": "/var/backups/sqlite",
+      "expected_tables": [
+        "configs",
+        "node_states"
+      ],
+      "assertion_rules": []
+    }
+  ]
+}
