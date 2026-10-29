@@ -13,6 +13,7 @@ import json
 import os
 from typing import Any, Dict, List, Optional, Union
 
+from drillops import __version__
 from drillops.models import AssertionResult, DrillSummary
 
 
@@ -292,7 +293,7 @@ class ExecutiveReportGenerator:
                     This report represents automated machine attestation. Evidence can be cross-verified against cryptographic signatures and cold-storage object versions.
                 </p>
                 <div class="font-mono text-[10px] text-slate-500 bg-slate-950 p-3 rounded-lg border border-slate-800">
-                    Engine: DrillOps Enterprise v0.1.0<br>
+                    Engine: DrillOps Enterprise v{__version__}<br>
                     Cert SHA-256: {sha256[:32]}...
                 </div>
             </div>
