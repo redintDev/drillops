@@ -19,7 +19,7 @@ class InteractiveDemoRunner:
     def print_banner():
         banner = """
 ================================================================================
-  🛡️  DRILLOPS INTERACTIVE DEMONSTRATION & QUICKSTART (v0.1.0)
+  🛡️  DRILLOPS INTERACTIVE DEMONSTRATION & QUICKSTART (v0.2.1)
 ================================================================================
   "Schrödinger's Backup: The condition of any backup is unknown until you try
    to restore it. DrillOps verifies backups in isolated sandboxes continuously."

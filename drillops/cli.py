@@ -8,6 +8,7 @@ import sys
 import tempfile
 from typing import List
 
+from drillops import __version__
 from drillops.core.runner import DrillRunner
 from drillops.models import AssertionRule, VerificationConfig
 from drillops.notifications import NotificationConfig, NotificationDispatcher
@@ -17,6 +18,9 @@ def parse_args(args: List[str] = None):
     parser = argparse.ArgumentParser(
         prog="drillops",
         description="DrillOps: Automated Database Restore Drill Runner & SOC2 Compliance Certifier",
+    )
+    parser.add_argument(
+        "--version", "-v", action="version", version=f"%(prog)s {__version__}"
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
