@@ -1,0 +1,23 @@
+[Unit]
+Description=DrillOps Continuous Database Restore Drill Watcher Daemon
+Documentation=https://github.com/redintDev/drillops
+After=network.target postgresql.service mysql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/backups
+ExecStart=/usr/local/bin/drillops watch --dir /var/backups/postgres --type postgres --out /var/backups/certificates --interval 3600
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=drillops
+
+# Sandboxing & security hardening
+ProtectSystem=full
+ProtectHome=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

@@ -108,16 +108,15 @@ Generate free 14-day evaluation keys or request commercial Pro/Enterprise licens
 Verify database restore drills automatically in your GitHub Actions CI/CD pipelines:
 ```yaml
 - name: Verify Database Restore Drill & Certify SOC2
-  uses: redintDev/drillops@v0.2.0 # Pinned release (or @v0.2, @main)
+  uses: redintDev/drillops@v0.2
   with:
     backup-path: ./backups/production.dump
     database-type: postgres # postgres, mysql, mariadb, or sqlite
     expected-tables: users,orders,billing
-    scan-pii: 'true'
-    max-rpo-hours: '24'
-    export-report: 'true'
     output-dir: ./certificates
 ```
+*See production-ready CI/CD, systemd, and target templates in [`examples/`](examples/).*
+
 
 ### 8. SOC2 CC9.1 & ISO 27001 Audit Preparation Checklist
 Evaluate disaster recovery readiness across 8 key SOC2/ISO audit controls and export audit-ready markdown reports:

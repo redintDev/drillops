@@ -1,0 +1,42 @@
+name: "Scheduled Disaster Recovery Drill (SOC 2 CC9.1)"
+
+on:
+  schedule:
+    # Run nightly at 02:00 UTC
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    # Allow manual execution from GitHub Actions UI
+
+jobs:
+  dr-drill:
+    name: "Automated Database Restore Drill"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Fetch latest production database backup"
+        # Replace this with your cloud backup pull (e.g. aws s3 cp, gcloud storage, etc.)
+        run: |
+          mkdir -p ./backups
+          # For demonstration or local testing, provide your backup file path:
+          # aws s3 cp s3://my-backup-vault/production/latest.sql.gz ./backups/prod.sql.gz
+
+      - name: "Execute DrillOps Restore Drill & Certify SOC 2"
+        uses: redintDev/drillops@v0.2
+        with:
+          backup-path: "./backups/prod.sql.gz"
+          database-type: "postgres" # Options: postgres, mysql, mariadb, sqlite
+          expected-tables: "users,organizations,transactions,audit_logs"
+          output-dir: "./certificates"
+          # Optional: Alert on drill failure
+          # slack-webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: "Upload Auditor Compliance Evidence Dossier"
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: "drillops-soc2-compliance-dossier"
+          path: "./certificates/"
+          retention-days: 90
