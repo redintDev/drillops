@@ -1,0 +1,134 @@
+# DrillOps — Complete Technical & API Reference
+
+> Automated Database Disaster Recovery Verification, RTO/RPO SLA Verifier, and SOC 2 CC9.1 / ISO 27001 Auditor Evidence Dossier Generator.
+
+---
+
+## 1. Architecture & Design Principles
+
+DrillOps operates on the principle that an unverified backup is an unhedged operational risk. Traditional backup tools verify backup creation (exit code of `pg_dump` or file presence in an S3 bucket); DrillOps verifies *restorability, data integrity, and recovery time SLA compliance*.
+
+### Technical Workflow
+1. **Source Ingestion**: Ingests backup files from local paths or remote object stores (AWS S3, Cloudflare R2, MinIO).
+2. **Ephemeral Sandboxing**: Spawns an isolated database instance or sandbox (PostgreSQL 16, MySQL 8.0, MariaDB 10.11, or SQLite).
+3. **Execution & Timing**: Executes complete schema and data restoration while measuring precise Recovery Time Objective (RTO).
+4. **Data Verification**: Audits row counts, table presence, and SHA-256 data checksums across critical tables.
+5. **Replication Continuity**: Evaluates WAL sequences (Postgres) or binlog continuity (MySQL) for Point-In-Time-Recovery (PITR).
+6. **PII Sanitization Scan**: Inspects restored data for unmasked PCI credit card numbers (Luhn check), SSNs, and credentials before staging.
+7. **Cryptographic Attestation**: Issues an Ed25519-signed or HMAC-SHA256 verified certificate with audit-ready JSON metadata.
+
+---
+
+## 2. CLI Command Reference
+
+### `drillops demo`
+Runs an interactive, self-contained demonstration drill using an embedded SQLite sandbox. Generates sample tables, restores data, runs checksums, and compiles a sample compliance dossier in <5 seconds.
+
+### `drillops doctor`
+Performs comprehensive pre-flight health checks:
+- Python version compatibility (>= 3.10)
+- Database engine binaries (`psql`, `pg_restore`, `mysql`, `sqlite3`)
+- Directory permissions and free disk space
+- Service socket reachability
+- Flag `--json`: Outputs machine-readable diagnostics.
+
+### `drillops verify`
+Executes a single restore drill on a specified backup archive.
+- `--backup PATH`: Path to backup file (.sql, .sql.gz, .dump) or remote URI (`s3://bucket/key`).
+- `--type {postgres,mysql,mariadb,sqlite}`: Database engine type.
+- `--tables T1,T2`: Comma-separated list of expected critical tables.
+- `--out DIR`: Directory where signed certificates are stored.
+- `--s3-endpoint-url URL`: Custom S3 endpoint for Cloudflare R2 or MinIO.
+
+### `drillops watch`
+Runs a background daemon continuously monitoring local directories or S3 buckets for new backups.
+- `--dir PATH`: Local directory or S3 bucket path.
+- `--type {postgres,mysql,mariadb,sqlite}`: Database engine type.
+- `--interval SECONDS`: Polling interval in seconds (default: 300).
+- `--out DIR`: Certificate output directory.
+
+### `drillops checklist`
+Evaluates disaster recovery readiness against SOC 2 CC9.1 and ISO 27001 audit controls:
+- 1. Automated periodic restore drills
+- 2. RTO SLA threshold compliance
+- 3. RPO freshness verification
+- 4. 3-2-1 backup redundancy across storage vaults
+- 5. Point-in-time recovery (PITR) WAL/binlog continuity
+- 6. Data integrity and row count consistency
+- 7. Sensitive data / PII leak prevention
+- 8. Cryptographic audit evidence preservation
+Flags:
+- `--cert-dir DIR`: Directory containing historical drill certificates.
+- `--company NAME`: Organization name for the dossier header.
+- `--out FILE`: Exports a publication-ready Markdown checklist report.
+- `--json`: Outputs structured audit findings as JSON.
+
+### `drillops audit-pack`
+Bundles historical certificates, compliance checklists, and executive summaries into a single auditor-ready ZIP dossier.
+- `--cert-dir DIR`: Certificate directory.
+- `--out FILE`: Target ZIP file path.
+- `--days N`: Include drills from the past N days (default: 90).
+
+### `drillops badge`
+Generates real-time compliance badges for documentation and status pages.
+- `--cert-dir DIR`: Certificate directory.
+- `--out FILE`: Path for SVG badge output.
+- `--shields-json`: Outputs Shields.io dynamic endpoint JSON.
+- `--markdown`: Prints Markdown embed snippet.
+
+### `drillops serve`
+Starts the embedded lightweight HTTP server hosting the local compliance dashboard, REST API, badge endpoints, and lead capture webhook.
+- `--host HOST`: Bind host (default: 127.0.0.1).
+- `--port PORT`: Port number (default: 8787).
+
+### `drillops license`
+Manages offline cryptographic license keys:
+- `drillops license info`: Displays active tier, target limits, and expiration date.
+- `drillops license verify --key <TOKEN>`: Validates an Ed25519 license token offline.
+
+---
+
+## 3. GitHub Action Integration
+
+```yaml
+name: Disaster Recovery Verification
+on:
+  schedule:
+    - cron: '0 2 * * *' # Daily at 2 AM
+  workflow_dispatch:
+
+jobs:
+  verify-restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run DrillOps DR Verification
+        uses: redintDev/drillops@v0.2
+        with:
+          backup-path: ./backups/prod.sql.gz
+          database-type: postgres
+          expected-tables: users,organizations,transactions
+          output-dir: ./certificates
+```
+
+---
+
+## 4. Licensing Tiers & Pricing Model
+
+DrillOps uses an open-core, offline-first licensing model. No telephone-home, no server-side DRM, 100% air-gapped support.
+
+| Feature | Community ($0) | Pro ($79/yr) | Enterprise ($199/yr) | 14-Day Trial ($0) |
+| :--- | :---: | :---: | :---: | :---: |
+| Single Database Restores | ✅ | ✅ | ✅ | ✅ |
+| CLI & Terminal Reports | ✅ | ✅ | ✅ | ✅ |
+| Postgres, MySQL, SQLite | ✅ | ✅ | ✅ | ✅ |
+| Multi-Target Orchestration | ❌ | Up to 10 targets | Unlimited | Up to 5 targets |
+| S3 / R2 Cloud Vault Polling | ❌ | ✅ | ✅ | ✅ |
+| SOC 2 Audit Pack (ZIP) | ❌ | ✅ | ✅ | ✅ |
+| Asymmetric Ed25519 Signatures | ❌ | ❌ | ✅ | ✅ (Watermarked) |
+| Priority Security Support | ❌ | Community | Email & SLA | Community |
+
+### Commercial Order & Remittance
+- Official Order Mailbox: `abdellatifaamrani4@gmail.com`
+- License tokens are minted via Ed25519 asymmetric cryptography and delivered directly upon purchase.
+- Public Web Portal: https://redintdev.github.io/drillops/
