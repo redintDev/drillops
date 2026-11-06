@@ -1,0 +1,36 @@
+# DrillOps
+
+> Automated Database Disaster Recovery Verification, RTO/RPO SLA Verifier, and SOC 2 CC9.1 / ISO 27001 Auditor Evidence Dossier Generator.
+
+DrillOps is an autonomous database disaster recovery verification engine. It proves that database backups actually restore to completion *before* disaster strikes, measuring Recovery Time Objective (RTO) and compiling cryptographically signed, auditor-grade compliance evidence for SOC 2 Type II (CC9.1), ISO 27001, and HIPAA audits.
+
+## Quick Installation & Usage
+- One-line installer: `curl -sSL https://raw.githubusercontent.com/redintDev/drillops/main/install.sh | bash`
+- Interactive Sandbox Demo: `drillops demo`
+- Pre-flight Diagnostic: `drillops doctor`
+- Verify a Backup: `drillops verify --backup ./backups/prod.sql.gz --type postgres --tables users,orgs --out ./certificates`
+- Compliance Checklist: `drillops checklist --eval --out ./SOC2_DR_CHECKLIST.md`
+- Composite GitHub Action: `uses: redintDev/drillops@v0.2`
+
+## Documentation & Machine-Readable Guides
+- [Full LLM Documentation](llms-full.txt): Complete CLI reference, API schemas, configuration examples, and licensing details.
+- [Public Web Portal](https://redintdev.github.io/drillops/): Interactive risk calculator, web demo, and live evaluation key minting.
+- [Public GitHub Repository](https://github.com/redintDev/drillops): Source code, GitHub Actions workflow, issues, and documentation.
+- [1-Line Installer Script](https://raw.githubusercontent.com/redintDev/drillops/main/install.sh): Turnkey installer supporting virtualenv auto-detection.
+- [Composite GitHub Action](https://github.com/redintDev/drillops/blob/main/action.yml): Drop-in CI/CD disaster recovery verification step.
+- [Commercial License & Ordering](mailto:abdellatifaamrani4@gmail.com): Direct remittance contact for Pro ($79/yr) and Enterprise ($199/yr) licenses.
+
+## Core Capabilities
+- Ephemeral database sandboxing for PostgreSQL 16, MySQL 8.0, MariaDB, and SQLite.
+- Tamper-evident Ed25519 cryptographic compliance certificates with SHA-256 data checksums.
+- RTO / RPO SLA verification against custom disaster recovery policies.
+- SOC 2 Type II (CC9.1) and ISO 27001 DR audit preparation dossiers.
+- Continuous WAL/binlog replication stream gap analysis.
+- PII & secret detection scanning (PCI-DSS credit cards, SSNs, credentials) before staging.
+- Embedded dark-mode HTTP server and dynamic SVG compliance status badges.
+
+## Commercial Licensing & Tiers
+- Free / Community Tier: Single database restore drills, CLI reporting, full SQLite/PostgreSQL restore engines ($0).
+- Pro Tier ($79/yr): Multi-target orchestration daemon, automated S3/R2 polling, audit dossier ZIP packaging.
+- Enterprise Tier ($199/yr): Asymmetric Ed25519 auditor signatures, priority support, unlimited backup targets.
+- 14-Day Free Trial: Fully functional offline evaluation token mintable directly in browser at https://redintdev.github.io/drillops/.
