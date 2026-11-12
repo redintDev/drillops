@@ -315,6 +315,9 @@ drillops check-binlog --binlog-dir /var/log/mysql/binlogs --json
 - Inspects 4-byte magic headers (`\xfebin` / `0xFE 0x62 0x69 0x6E`) for file integrity validation.
 - Verifies `.index` catalog reconciliation when binlog index files exist on disk.
 
+### 22. Technical Runbooks & Compliance Guides
+- 📖 **[PostgreSQL Disaster Recovery SLA Runbook & Automated Verification Guide](docs/POSTGRES_DR_RUNBOOK.md)**: A complete technical guide for PostgreSQL DBAs and SREs on automating ephemeral restore drills, measuring sub-second RTO, and compiling SOC 2 CC9.1 / ISO 27001 auditor evidence.
+
 ---
 
 ## 🏗️ Architecture
