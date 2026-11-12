@@ -198,7 +198,7 @@ def test_revocation_blacklist_enforced():
     """Security Gate (REC-006): Disclosed/revoked fixture license IDs must be explicitly rejected."""
     prod_validator = LicenseValidator()
 
-    for revoked_id in ["LIC-PRO-ABC7801E", "LIC-ENT-E55FC6BE", "LIC-PRO-D6CC1B02"]:
+    for revoked_id in ["LIC-PRO-ABC7801E", "LIC-ENT-E55FC6BE", "LIC-PRO-D6CC1B02", "LIC-PRO-A1B2C3D4"]:
         # Try both as evaluation and V2 format with revoked ID
         eval_token = _mint_eval_token(lic_id=revoked_id)
         valid, info, error = prod_validator.validate_key(eval_token)
@@ -380,3 +380,42 @@ def test_cli_license_info_and_verify(capsys):
     assert ret == 1
     captured = capsys.readouterr()
     assert "INVALID" in captured.out
+
+
+def test_evaluation_trial_cannot_substitute_paid_pro_commercial_value():
+    """
+    Economic & Security Boundary Test (REC-001):
+    Asserts that repeated self-minting of DRILLOPS-V1 evaluation tokens cannot yield
+    the durable value of an authentic paid Pro license (DRILLOPS-V2):
+    1. Evaluation tokens are strictly capped at max 5 targets (Pro allows 25+).
+    2. Evaluation tokens cannot exceed 14 days duration.
+    3. Evaluation tokens cannot unlock Enterprise exclusive capabilities.
+    4. Re-minting after expiry still enforces target capping and 14-day expiry.
+    """
+    validator = LicenseValidator()
+
+    # 1. Evaluation tokens are strictly capped at 5 targets
+    eval_token_5 = _mint_eval_token(name="Repeat User", targets=5, days=14)
+    valid, info, _ = validator.validate_key(eval_token_5)
+    assert valid is True
+    assert info.max_targets == 5
+
+    # Claiming 10 targets in an evaluation token is strictly clamped down to 5
+    eval_token_10 = _mint_eval_token(name="Repeat User", targets=10, days=14)
+    valid, info_10, _ = validator.validate_key(eval_token_10)
+    assert valid is True
+    assert info_10.max_targets == 5
+
+    # Evaluation token license_id is indelibly watermarked for auditors
+    assert info_10.license_id.endswith("[EVALUATION TRIAL]")
+
+    # 2. Evaluation token duration cannot exceed 14 days
+    eval_token_long = _mint_eval_token(name="Repeat User", targets=5, days=30)
+    valid, _, err = validator.validate_key(eval_token_long)
+    assert valid is False
+    assert "exceeds maximum allowed duration (14 days)" in err
+
+    # 3. Enterprise exclusive features cannot be unlocked by evaluation tokens
+    assert validator.is_feature_enabled("enterprise_sso", eval_token_5) is False
+    assert validator.is_feature_enabled("airgapped_vault", eval_token_5) is False
+

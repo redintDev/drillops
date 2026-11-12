@@ -132,3 +132,10 @@ DrillOps uses an open-core, offline-first licensing model. No telephone-home, no
 - Official Order Mailbox: `abdellatifaamrani4@gmail.com`
 - License tokens are minted via Ed25519 asymmetric cryptography and delivered directly upon purchase.
 - Public Web Portal: https://redintdev.github.io/drillops/
+
+---
+
+## 5. Technical Runbooks & Compliance References
+- **PostgreSQL DR SLA Runbook**: `docs/POSTGRES_DR_RUNBOOK.md` (Ephemeral sandbox restore testing, RTO/RPO SLA measurement, and SOC 2 CC9.1 compliance pack generation).
+- **Commercial Pricing Guide**: `docs/COMMERCIAL_PRICING.md` (Detailed feature matrix, tier capabilities, and offline licensing mechanics).
+
