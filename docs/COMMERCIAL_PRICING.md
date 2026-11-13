@@ -28,13 +28,13 @@ DrillOps uses a developer-first open-core model designed to turn disaster recove
 
 ## 2. Licensing Mechanism (Zero DRM Infrastructure)
 
-DrillOps Pro and Enterprise tiers utilize **offline cryptographic signature verification** via HMAC-SHA256 signed tokens (`DRILLOPS-V1.<payload>.<signature>`).
+DrillOps Pro and Enterprise tiers utilize **offline asymmetric cryptographic signature verification** via Ed25519 signed tokens (`DRILLOPS-V2.<payload>.<ed25519_signature>`). Evaluation trials use restricted HMAC-SHA256 tokens (`DRILLOPS-V1.<payload>.<hmac_signature>`) capped at 14 days and 5 targets with evaluation watermarks.
 
 ### Key Benefits for Customers:
-- **No DRM Phone-Home**: Works in completely air-gapped VPCs, GovCloud, or isolated offline environments.
+- **No DRM Phone-Home**: Works in completely air-gapped VPCs, GovCloud, or isolated offline environments. Zero network calls or external verification servers.
 - **Instant Activation**: Simply set the environment variable in your Docker container, Kubernetes Pod, or CI pipeline:
   ```bash
-  export DRILLOPS_LICENSE_KEY="DRILLOPS-V1.eyJpZCI6IkxJQy1QUk8...<signature>"
+  export DRILLOPS_LICENSE_KEY="DRILLOPS-V2.eyJpZCI6IkxJQy1QUk8...<signature>"
   ```
 - **Inspect Anytime**:
   ```bash
@@ -43,6 +43,10 @@ DrillOps Pro and Enterprise tiers utilize **offline cryptographic signature veri
 
 ---
 
-## 3. Self-Service Checkout Integration
+## 3. Commercial Ordering & Fulfillment
 
-Licenses can be purchased via self-service Stripe or LemonSqueezy payment links. Upon successful checkout, the fulfillment webhook automatically generates the cryptographic token and emails it to the customer along with immediate setup instructions.
+Commercial licenses are fulfilled directly with electronic invoicing and remittance via email (`abdellatifaamrani4@gmail.com`).
+
+- **Fulfillment**: Upon invoice settlement, an official, cryptographically signed `DRILLOPS-V2` token matching your organization and seat count is generated and delivered immediately with onboarding documentation.
+- **Self-Service Checkout**: Automated self-service gateway integration (Stripe / LemonSqueezy) is currently planned on the product roadmap; all present transactions are processed via standard compliant commercial invoicing.
+- **Enterprise Procurement**: Custom vendor security questionnaires, ACH/wire remittance, and custom Master Service Agreements (MSAs) are supported for Enterprise tier orders.
