@@ -5,6 +5,7 @@
 [![GitHub Action](https://img.shields.io/badge/GitHub%20Action-v0.2-orange?logo=githubactions)](https://github.com/redintDev/drillops)
 [![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://github.com/redintDev/drillops)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![llms.txt](https://img.shields.io/badge/llms.txt-standard-blueviolet)](https://redintdev.github.io/drillops/llms.txt)
 
 > *"An untested backup is not a backup—it is merely a wish."*
 
