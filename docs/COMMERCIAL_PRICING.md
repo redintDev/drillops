@@ -47,6 +47,6 @@ DrillOps Pro and Enterprise tiers utilize **offline asymmetric cryptographic sig
 
 Commercial licenses are fulfilled directly with electronic invoicing and remittance via email (`abdellatifaamrani4@gmail.com`).
 
-- **Fulfillment**: Upon invoice settlement, an official, cryptographically signed `DRILLOPS-V2` token matching your organization and seat count is generated and delivered immediately with onboarding documentation.
+- **Fulfillment**: Manual fulfillment via maintainer email. Upon confirmed invoice settlement, an official, cryptographically signed `DRILLOPS-V2` token matching your organization and seat count is generated and delivered via email (typically within 1 business day) along with onboarding documentation.
 - **Self-Service Checkout**: Automated self-service gateway integration (Stripe / LemonSqueezy) is currently planned on the product roadmap; all present transactions are processed via standard compliant commercial invoicing.
-- **Enterprise Procurement**: Custom vendor security questionnaires, ACH/wire remittance, and custom Master Service Agreements (MSAs) are supported for Enterprise tier orders.
+- **Enterprise Procurement**: Custom vendor security questionnaires, ACH/wire remittance, and custom Master Service Agreements (MSAs) can be reviewed and coordinated manually on request for Enterprise tier orders.
