@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# LLM Search & AI Discovery Crawlers
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+Sitemap: https://redintdev.github.io/drillops/sitemap.xml
