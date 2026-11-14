@@ -20,6 +20,8 @@ DrillOps is an autonomous database disaster recovery verification engine. It pro
 - [Public GitHub Repository](https://github.com/redintDev/drillops): Source code, GitHub Actions workflow, issues, and documentation.
 - [1-Line Installer Script](https://raw.githubusercontent.com/redintDev/drillops/main/install.sh): Turnkey installer supporting virtualenv auto-detection.
 - [Composite GitHub Action](https://github.com/redintDev/drillops/blob/main/action.yml): Drop-in CI/CD disaster recovery verification step.
+- [Crawler Directives (robots.txt)](https://redintdev.github.io/drillops/robots.txt): Official crawler permissions and sitemap pointer.
+- [Sitemap (sitemap.xml)](https://redintdev.github.io/drillops/sitemap.xml): Machine-readable index of canonical pages and runbooks.
 - [Commercial License & Ordering](mailto:abdellatifaamrani4@gmail.com): Direct remittance contact for Pro ($79/yr) and Enterprise ($199/yr) licenses.
 
 ## Core Capabilities
