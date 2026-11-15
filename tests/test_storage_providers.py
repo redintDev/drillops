@@ -83,6 +83,12 @@ def test_get_storage_provider_factory():
     prov_local = get_storage_provider("/var/backups")
     assert isinstance(prov_local, LocalStorageProvider)
 
+    # Test tolerance for unexpected kwargs (e.g. endpoint_url, region_name from CLI parser)
+    prov_local_kwargs = get_storage_provider(
+        "/var/backups", endpoint_url="http://localhost:9000", region_name="us-east-1"
+    )
+    assert isinstance(prov_local_kwargs, LocalStorageProvider)
+
     prov_s3 = get_storage_provider("s3://company-vault/daily/")
     assert isinstance(prov_s3, S3CompatibleStorageProvider)
     assert prov_s3.bucket_name == "company-vault"
