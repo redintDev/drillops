@@ -17,10 +17,22 @@ inputs:
     description: "Comma-separated list of critical tables that must exist and contain data"
     required: false
     default: ""
-  max-rto-seconds:
-    description: "Maximum allowable Recovery Time Objective (RTO) SLA threshold in seconds"
+  scan-pii:
+    description: "Scan restored tables for unmasked customer PII/secrets (SOC2 CC6.1)"
+    required: false
+    default: "false"
+  max-rpo-hours:
+    description: "Maximum allowable Recovery Point Objective (RPO) backup age in hours"
     required: false
     default: ""
+  require-321:
+    description: "Enforce strict 3-2-1 backup redundancy rule (3 copies, 2 media types, 1 offsite)"
+    required: false
+    default: "false"
+  publish-summary:
+    description: "Publish markdown certificate directly to GitHub Step Summary"
+    required: false
+    default: "true"
   license-key:
     description: "DrillOps Pro or Enterprise offline license token for commercial features"
     required: false
@@ -75,8 +87,14 @@ runs:
         if [ -n "${{ inputs.expected-tables }}" ]; then
           CMD="$CMD --tables \"${{ inputs.expected-tables }}\""
         fi
-        if [ -n "${{ inputs.max-rto-seconds }}" ]; then
-          CMD="$CMD --max-rto-sec \"${{ inputs.max-rto-seconds }}\""
+        if [ "${{ inputs.scan-pii }}" = "true" ]; then
+          CMD="$CMD --scan-pii"
+        fi
+        if [ -n "${{ inputs.max-rpo-hours }}" ]; then
+          CMD="$CMD --max-rpo-hours \"${{ inputs.max-rpo-hours }}\""
+        fi
+        if [ "${{ inputs.require-321 }}" = "true" ]; then
+          CMD="$CMD --require-321"
         fi
         if [ -n "${{ inputs.webhook-url }}" ]; then
           CMD="$CMD --notify-webhook \"${{ inputs.webhook-url }}\""
@@ -95,6 +113,11 @@ runs:
           echo "certificate_id=$CERT_ID" >> $GITHUB_OUTPUT
           echo "restore_status=$STATUS" >> $GITHUB_OUTPUT
           echo "restore_rto_seconds=$RTO" >> $GITHUB_OUTPUT
+        fi
+
+        CERT_MD=$(ls -t ${{ inputs.output-dir }}/drill_cert_*.md 2>/dev/null | head -n 1)
+        if [ "${{ inputs.publish-summary }}" = "true" ] && [ -f "$CERT_MD" ] && [ -n "$GITHUB_STEP_SUMMARY" ]; then
+          cat "$CERT_MD" >> "$GITHUB_STEP_SUMMARY"
         fi
 
     - name: Upload Compliance Certificate Artifacts
