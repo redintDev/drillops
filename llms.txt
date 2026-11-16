@@ -15,6 +15,7 @@ DrillOps is an autonomous database disaster recovery verification engine. It pro
 ## Documentation & Machine-Readable Guides
 - [Full LLM Documentation](llms-full.txt): Complete CLI reference, API schemas, configuration examples, and licensing details.
 - [PostgreSQL DR SLA Runbook](docs/POSTGRES_DR_RUNBOOK.md): Complete practitioner guide for DBAs and SREs on ephemeral restore testing and SOC 2 CC9.1 compliance.
+- [MySQL & MariaDB DR Runbook](docs/MYSQL_DR_RUNBOOK.md): Complete practitioner guide for MySQL and MariaDB DBAs on mysqldump restore verification, binary log (binlog) auditing, and SOC 2 CC9.1 compliance.
 - [Commercial Pricing & Feature Matrix](docs/COMMERCIAL_PRICING.md): Detailed comparison across Community ($0), Pro ($79/yr), and Enterprise ($199/yr).
 - [Public Web Portal](https://redintdev.github.io/drillops/): Interactive risk calculator, web demo, and live evaluation key minting.
 - [Public GitHub Repository](https://github.com/redintDev/drillops): Source code, GitHub Actions workflow, issues, and documentation.
