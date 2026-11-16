@@ -55,7 +55,7 @@ class SOC2ChecklistEvaluator:
             "title": "Continuous Sandbox Restoration Drills",
             "requirement": "Backups must be routinely and automatically restored to completion in isolated test environments.",
             "auditor_evidence_needed": "Time-stamped logs of restore drills executed at least quarterly, showing start/end timestamps and exit codes.",
-            "drillops_automation": "Fully automated ephemeral sandbox restoration (Postgres pg_restore / SQLite) with sub-second RTO telemetry.",
+            "drillops_automation": "Fully automated ephemeral sandbox restoration (PostgreSQL, MySQL, MariaDB, SQLite) with sub-second RTO telemetry.",
         },
         {
             "id": "DR-05",
@@ -99,6 +99,7 @@ class SOC2ChecklistEvaluator:
         has_passed_drills = False
         drill_count = 0
         avg_rto = 0.0
+        verified_engines: List[str] = []
 
         if self.cert_dir and os.path.isdir(self.cert_dir):
             try:
@@ -117,15 +118,22 @@ class SOC2ChecklistEvaluator:
                     has_passed_drills = True
                     rtos = [c.get("metrics", {}).get("recovery_time_objective_actual_seconds", 0) for c in passed_certs]
                     avg_rto = round(sum(rtos) / len(rtos), 3) if rtos else 0.0
+                    engines_set = set()
+                    for c in passed_certs:
+                        db_type = c.get("target", {}).get("database_type")
+                        if db_type:
+                            engines_set.add(db_type)
+                    verified_engines = sorted(list(engines_set))
             except Exception:
                 pass
 
+        engine_clause = f" [{', '.join(verified_engines)}]" if verified_engines else ""
         controls = []
         for c in self.CONTROLS:
             cid = c["id"]
             if cid in ("DR-03", "DR-04", "DR-05", "DR-06") and has_passed_drills:
                 status = "COMPLIANT"
-                details = f"Verified: {drill_count} drill(s) executed. Avg RTO: {avg_rto}s. Assertions & SHA-256 confirmed."
+                details = f"Verified: {drill_count} drill(s) executed. Avg RTO: {avg_rto}s.{engine_clause} Assertions & SHA-256 confirmed."
             elif cid in ("DR-07", "DR-08") and has_passed_drills:
                 status = "READY"
                 details = "DrillOps tooling operational. Evidence dossier export ready via 'drillops audit-pack'."
