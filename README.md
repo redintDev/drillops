@@ -318,6 +318,7 @@ drillops check-binlog --binlog-dir /var/log/mysql/binlogs --json
 
 ### 22. Technical Runbooks & Compliance Guides
 - 📖 **[PostgreSQL Disaster Recovery SLA Runbook & Automated Verification Guide](docs/POSTGRES_DR_RUNBOOK.md)**: A complete technical guide for PostgreSQL DBAs and SREs on automating ephemeral restore drills, measuring sub-second RTO, and compiling SOC 2 CC9.1 / ISO 27001 auditor evidence.
+- 📖 **[MySQL & MariaDB Disaster Recovery Runbook & Automated Verification Guide](docs/MYSQL_DR_RUNBOOK.md)**: A complete technical guide for MySQL & MariaDB DBAs and SREs on automating ephemeral restore drills, continuous binary log (binlog) auditing, measuring sub-second RTO, and compiling SOC 2 CC9.1 / ISO 27001 auditor evidence.
 
 ---
 
@@ -380,10 +381,10 @@ See [`docs/COMMERCIAL_PRICING.md`](docs/COMMERCIAL_PRICING.md) for full pricing 
 
 ## 🧪 Testing
 
-Run all 168 unit and integration tests:
+Run all 183 unit and integration tests:
 ```bash
 source .venv/bin/activate
-pytest projects/drillops/tests/
+pytest tests/
 ```
-All 168 tests pass in < 20 seconds.
+All 183 tests pass in ~30 seconds.
 
