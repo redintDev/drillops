@@ -36,7 +36,7 @@ class BaseStorageProvider(ABC):
 class LocalStorageProvider(BaseStorageProvider):
     """Discovers and retrieves backups from local or mounted storage volumes."""
 
-    def __init__(self, directory_path: str, glob_pattern: str = "*"):
+    def __init__(self, directory_path: str, glob_pattern: str = "*", **kwargs):
         self.directory_path = os.path.abspath(directory_path)
         self.glob_pattern = glob_pattern
 
@@ -278,5 +278,6 @@ def get_storage_provider(path_or_uri: str, **kwargs) -> BaseStorageProvider:
     """Returns appropriate storage provider for local path or cloud s3:// URI."""
     if path_or_uri.startswith("s3://"):
         return S3CompatibleStorageProvider.from_uri(path_or_uri, **kwargs)
-    return LocalStorageProvider(path_or_uri, **kwargs)
+    glob_pattern = kwargs.get("glob_pattern", "*")
+    return LocalStorageProvider(path_or_uri, glob_pattern=glob_pattern)
 
