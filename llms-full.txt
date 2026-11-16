@@ -139,5 +139,6 @@ DrillOps uses an open-core, offline-first licensing model. No telephone-home, no
 - **PostgreSQL DR SLA Runbook**: `docs/POSTGRES_DR_RUNBOOK.md` (Ephemeral sandbox restore testing, RTO/RPO SLA measurement, and SOC 2 CC9.1 compliance pack generation).
 - **MySQL & MariaDB DR Runbook**: `docs/MYSQL_DR_RUNBOOK.md` (Ephemeral sandbox restore testing, mysqldump caveats, binary log PITR validation, and SOC 2 CC9.1 evidence generation).
 - **SQLite & Embedded Database DR Runbook**: `docs/SQLITE_DR_RUNBOOK.md` (Ephemeral in-memory sandbox restore testing, WAL "torn copy" traps, Litestream/LiteFS continuous replication validation, and SOC 2 CC9.1 evidence generation).
+- **CI/CD Pipeline Integration Guide**: `docs/CICD_INTEGRATION_GUIDE.md` (Complete practitioner guide for automating scheduled DR restore drills in GitHub Actions, GitLab CI, Bitbucket Pipelines, CircleCI, and Kubernetes).
 - **Commercial Pricing Guide**: `docs/COMMERCIAL_PRICING.md` (Detailed feature matrix, tier capabilities, and offline licensing mechanics).
 
