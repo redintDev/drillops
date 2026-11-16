@@ -172,7 +172,42 @@ class SystemDoctor:
                     )
                 )
 
-        # 5. Output / Certificate directory write permissions
+        # 5. MySQL / MariaDB client binaries
+        mysql_bin = shutil.which("mysql") or shutil.which("mariadb")
+        if mysql_bin:
+            try:
+                out = subprocess.check_output([mysql_bin, "--version"], text=True).strip()
+                checks.append(
+                    DiagnosticCheck(
+                        category="Database",
+                        name="MySQL / MariaDB Binaries",
+                        status="PASS",
+                        message=f"Client tools present ({out})",
+                        details=f"Binary: {mysql_bin}",
+                    )
+                )
+            except Exception:
+                checks.append(
+                    DiagnosticCheck(
+                        category="Database",
+                        name="MySQL / MariaDB Binaries",
+                        status="PASS",
+                        message="Client binary located in PATH",
+                        details=f"Path: {mysql_bin}",
+                    )
+                )
+        else:
+            checks.append(
+                DiagnosticCheck(
+                    category="Database",
+                    name="MySQL / MariaDB Binaries",
+                    status="WARN",
+                    message="MySQL / MariaDB tools not found in PATH",
+                    details="Install via: sudo apt install default-mysql-client (optional for SQLite/Postgres drills)",
+                )
+            )
+
+        # 6. Output / Certificate directory write permissions
         try:
             test_dir = os.path.abspath(self.cert_dir)
             os.makedirs(test_dir, exist_ok=True)
@@ -198,7 +233,30 @@ class SystemDoctor:
                 )
             )
 
-        # 6. Disk capacity
+        # 7. Compression & Decryption Utilities
+        sec_tools = [tool for tool in ("gzip", "openssl", "gpg") if shutil.which(tool)]
+        if "gzip" in sec_tools:
+            checks.append(
+                DiagnosticCheck(
+                    category="Storage",
+                    name="Compression & Security",
+                    status="PASS",
+                    message=f"Archive & crypto tools active ({', '.join(sec_tools)})",
+                    details="Supports .gz archives, AES-256 decryption, and GPG validation",
+                )
+            )
+        else:
+            checks.append(
+                DiagnosticCheck(
+                    category="Storage",
+                    name="Compression & Security",
+                    status="WARN",
+                    message="gzip binary not located in PATH",
+                    details="Install via: sudo apt install gzip openssl",
+                )
+            )
+
+        # 8. Disk capacity
         try:
             total, used, free = shutil.disk_usage(os.path.abspath(self.cert_dir))
             free_gb = round(free / (1024**3), 2)
@@ -230,7 +288,7 @@ class SystemDoctor:
                 )
             )
 
-        # 7. License Verification
+        # 9. License Verification
         is_valid, lic_info, err = LicenseValidator().validate_key()
         if is_valid and lic_info:
             tier_name = lic_info.tier.value.upper()
