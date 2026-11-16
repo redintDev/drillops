@@ -158,3 +158,39 @@ def test_cli_checklist_file_export(mock_cert_dir, tmp_path):
     content = out_file.read_text(encoding="utf-8")
     assert "ExportCo" in content
     assert "Audit Readiness Score" in content
+
+
+def test_evaluator_with_multi_engine_certs(tmp_path):
+    """Verify that evaluator tracks multiple database engines in audit details."""
+    cert_dir = tmp_path / "multi_engine_certs"
+    cert_dir.mkdir()
+
+    cert_pg = {
+        "certificate_version": "1.0",
+        "certificate_id": "DRC-PG001",
+        "timestamp_utc": "2026-10-10T10:00:00Z",
+        "overall_status": "PASSED",
+        "target": {"database_type": "postgresql"},
+        "metrics": {"recovery_time_objective_actual_seconds": 1.5, "passed_assertions": 4, "failed_assertions": 0},
+    }
+    cert_my = {
+        "certificate_version": "1.0",
+        "certificate_id": "DRC-MY001",
+        "timestamp_utc": "2026-10-10T11:00:00Z",
+        "overall_status": "PASSED",
+        "target": {"database_type": "mysql"},
+        "metrics": {"recovery_time_objective_actual_seconds": 0.5, "passed_assertions": 3, "failed_assertions": 0},
+    }
+
+    (cert_dir / "drill_cert_DRC-PG001.json").write_text(json.dumps(cert_pg), encoding="utf-8")
+    (cert_dir / "drill_cert_DRC-MY001.json").write_text(json.dumps(cert_my), encoding="utf-8")
+
+    evaluator = SOC2ChecklistEvaluator(cert_dir=str(cert_dir))
+    controls = evaluator.evaluate(company="MultiEngineCorp")
+
+    ctrl_map = {c.id: c for c in controls}
+    assert ctrl_map["DR-04"].status == "COMPLIANT"
+    assert "[mysql, postgresql]" in ctrl_map["DR-04"].details
+    assert "Avg RTO: 1.0s" in ctrl_map["DR-04"].details
+    assert "PostgreSQL, MySQL, MariaDB, SQLite" in ctrl_map["DR-04"].drillops_automation
+
