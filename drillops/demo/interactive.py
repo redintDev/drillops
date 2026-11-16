@@ -7,6 +7,7 @@ import time
 from typing import Any, Dict, Optional
 
 from drillops.compliance.audit_pack import AuditPackGenerator
+from drillops.compliance.checklist import SOC2ChecklistEvaluator
 from drillops.core.runner import DrillRunner
 from drillops.generator.synthetic import SyntheticDataGenerator
 from drillops.models import AssertionRule, VerificationConfig
@@ -109,14 +110,20 @@ class InteractiveDemoRunner:
             print()
 
             # ------------------------------------------------------------------
-            # Phase 3: SOC2 Compliance Dossier Generation
+            # Phase 3: SOC2 Compliance Dossier & Audit Readiness Checklist
             # ------------------------------------------------------------------
-            print("▶ STEP 4: Generating SOC2 / ISO 27001 Auditor Evidence Dossier...")
+            print("▶ STEP 4: Generating SOC2 / ISO 27001 Auditor Evidence Dossier & Checklist...")
             audit_zip_path = os.path.join(work_dir, "drillops_demo_audit_pack.zip")
             generator = AuditPackGenerator(certs_dir)
             generator.export_pack_zip(audit_zip_path, company_name="Acme Corporation")
             print(f"  ✔ Generated Audit Dossier Archive: {audit_zip_path}")
             print("     Contains: AUDIT_DOSSIER.md, AUDIT_DOSSIER.html, manifest.json, and raw certificates.")
+
+            evaluator = SOC2ChecklistEvaluator(certs_dir)
+            controls = evaluator.evaluate(company="Acme Corporation")
+            compliant_count = sum(1 for c in controls if c.status in ("COMPLIANT", "READY"))
+            score_pct = round((compliant_count / len(controls)) * 100, 1)
+            print(f"  ✔ Evaluated SOC2 DR Readiness Score: {score_pct}% ({compliant_count}/{len(controls)} controls verified)")
             print()
 
             # ------------------------------------------------------------------
@@ -129,6 +136,8 @@ class InteractiveDemoRunner:
             print("  1. Verify a backup:   drillops verify --backup db.sql.gz --type postgres --tables users,orders")
             print("  2. Run auto-watcher:  drillops watch --dir /var/backups --type postgres")
             print("  3. View dashboard:    drillops serve --port 8787")
+            print("  4. Audit checklist:   drillops checklist --company \"Acme Corp\"")
+            print("  5. Pre-flight check:  drillops doctor")
             print("================================================================\n")
 
             return {
@@ -137,4 +146,6 @@ class InteractiveDemoRunner:
                 "valid_status": summary_valid.overall_status,
                 "corrupt_status": summary_corrupt.overall_status,
                 "audit_pack_path": audit_zip_path,
+                "soc2_verified_controls": compliant_count,
+                "soc2_readiness_score": score_pct,
             }

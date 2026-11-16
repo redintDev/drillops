@@ -26,3 +26,7 @@ def test_interactive_demo_lifecycle():
             assert "AUDIT_DOSSIER.md" in files
             assert "AUDIT_DOSSIER.html" in files
             assert "manifest.json" in files
+
+        # Verify SOC2 readiness checklist evaluation
+        assert res["soc2_verified_controls"] == 6
+        assert res["soc2_readiness_score"] == 75.0
