@@ -12,3 +12,6 @@ contact_links:
   - name: "MySQL & MariaDB Disaster Recovery Runbook"
     url: "https://github.com/redintDev/drillops/blob/main/docs/MYSQL_DR_RUNBOOK.md"
     about: "Step-by-step guide on MySQL mysqldump verification, binary log (binlog) auditing, and SOC 2 CC9.1 compliance."
+  - name: "SQLite & Embedded Disaster Recovery Runbook"
+    url: "https://github.com/redintDev/drillops/blob/main/docs/SQLITE_DR_RUNBOOK.md"
+    about: "Step-by-step guide on SQLite WAL safe backups, Litestream replication auditing, and SOC 2 CC9.1 compliance."
