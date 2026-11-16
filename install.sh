@@ -102,9 +102,10 @@ echo -e "\n${GREEN}${BOLD}[✔] DrillOps successfully installed!${RESET}"
 echo -e "${CYAN}------------------------------------------------------------${RESET}"
 echo -e "Quickstart Guide:"
 echo -e "  1. Run interactive sandbox drill:  ${BOLD}${DRILLOPS_CMD} demo${RESET}"
-echo -e "  2. View compliance dashboard:     ${BOLD}${DRILLOPS_CMD} serve --port 8787${RESET}"
-echo -e "  3. Start automated watcher:        ${BOLD}${DRILLOPS_CMD} watch --engine sqlite${RESET}"
-echo -e "  4. Generate SOC2 auditor pack:    ${BOLD}${DRILLOPS_CMD} audit-pack --out ./dossier${RESET}"
+echo -e "  2. Pre-flight health diagnostics:  ${BOLD}${DRILLOPS_CMD} doctor${RESET}"
+echo -e "  3. Start automated watcher:        ${BOLD}${DRILLOPS_CMD} watch --dir ./backups --type sqlite${RESET}"
+echo -e "  4. View compliance dashboard:     ${BOLD}${DRILLOPS_CMD} serve --port 8787${RESET}"
+echo -e "  5. Generate SOC2 auditor pack:    ${BOLD}${DRILLOPS_CMD} audit-pack --out ./dossier.zip${RESET}"
 echo -e "${CYAN}------------------------------------------------------------${RESET}\n"
 
 if [ "$1" == "--demo" ]; then
