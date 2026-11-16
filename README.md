@@ -16,12 +16,13 @@ DrillOps is an autonomous database disaster recovery verification engine. It pro
 
 ## ⚡ Quickstart in 5 Seconds
 
-Experience a full sandbox restore drill, defect detection cycle, and SOC2 audit dossier generation with a single command:
+Experience a full sandbox restore drill, silent corruption detection, SOC 2 readiness audit, and compliance dossier generation with a single command:
 
 ```bash
 # Run the interactive guided demo
 drillops demo
 ```
+This turnkey demo creates a test backup, executes an ephemeral sandbox restore with sub-second RTO measurement, injects silent corruption to demonstrate deficit detection, evaluates your baseline SOC 2 CC9.1 readiness score, and exports a signed auditor dossier (`audit_pack.zip`).
 
 ---
 
@@ -383,10 +384,10 @@ See [`docs/COMMERCIAL_PRICING.md`](docs/COMMERCIAL_PRICING.md) for full pricing 
 
 ## 🧪 Testing
 
-Run all 183 unit and integration tests:
+Run all 184 unit and integration tests:
 ```bash
 source .venv/bin/activate
 pytest tests/
 ```
-All 183 tests pass in ~30 seconds.
+All 184 tests pass in ~30 seconds.
 
