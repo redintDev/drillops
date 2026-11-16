@@ -15,3 +15,6 @@ contact_links:
   - name: "SQLite & Embedded Disaster Recovery Runbook"
     url: "https://github.com/redintDev/drillops/blob/main/docs/SQLITE_DR_RUNBOOK.md"
     about: "Step-by-step guide on SQLite WAL safe backups, Litestream replication auditing, and SOC 2 CC9.1 compliance."
+  - name: "CI/CD Pipeline Integration Guide"
+    url: "https://github.com/redintDev/drillops/blob/main/docs/CICD_INTEGRATION_GUIDE.md"
+    about: "Production pipeline recipes for GitHub Actions, GitLab CI, Bitbucket, CircleCI, and Kubernetes CronJobs."

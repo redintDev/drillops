@@ -320,6 +320,7 @@ drillops check-binlog --binlog-dir /var/log/mysql/binlogs --json
 - 📖 **[PostgreSQL Disaster Recovery SLA Runbook & Automated Verification Guide](docs/POSTGRES_DR_RUNBOOK.md)**: A complete technical guide for PostgreSQL DBAs and SREs on automating ephemeral restore drills, measuring sub-second RTO, and compiling SOC 2 CC9.1 / ISO 27001 auditor evidence.
 - 📖 **[MySQL & MariaDB Disaster Recovery Runbook & Automated Verification Guide](docs/MYSQL_DR_RUNBOOK.md)**: A complete technical guide for MySQL & MariaDB DBAs and SREs on automating ephemeral restore drills, continuous binary log (binlog) auditing, measuring sub-second RTO, and compiling SOC 2 CC9.1 / ISO 27001 auditor evidence.
 - 📖 **[SQLite & Embedded Database Disaster Recovery Runbook & Automated Verification Guide](docs/SQLITE_DR_RUNBOOK.md)**: A complete technical guide for Systems Engineers, Edge Developers, and SREs on avoiding WAL "torn copy" traps, continuous Litestream/LiteFS verification, sub-second RTO benchmarking, and compiling SOC 2 CC9.1 / ISO 27001 auditor evidence.
+- 📖 **[Continuous Disaster Recovery Verification in CI/CD Pipelines](docs/CICD_INTEGRATION_GUIDE.md)**: Ready-to-use production recipes for automating scheduled backup restoration drills in GitHub Actions, GitLab CI/CD, Bitbucket Pipelines, CircleCI, and Kubernetes CronJobs.
 
 ---
 
