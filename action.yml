@@ -5,17 +5,24 @@ branding:
   icon: "shield"
   color: "green"
 
-
 inputs:
   backup-path:
     description: "Path to database backup file (.dump, .sql, .sql.gz, .sqlite)"
     required: true
   database-type:
-    description: "Database engine ('sqlite' or 'postgres')"
+    description: "Database engine ('sqlite', 'postgres', 'mysql', or 'mariadb')"
     required: false
     default: "sqlite"
   expected-tables:
     description: "Comma-separated list of critical tables that must exist and contain data"
+    required: false
+    default: ""
+  max-rto-seconds:
+    description: "Maximum allowable Recovery Time Objective (RTO) SLA threshold in seconds"
+    required: false
+    default: ""
+  license-key:
+    description: "DrillOps Pro or Enterprise offline license token for commercial features"
     required: false
     default: ""
   output-dir:
@@ -60,9 +67,16 @@ runs:
       id: run-drill
       shell: bash
       run: |
+        if [ -n "${{ inputs.license-key }}" ]; then
+          export DRILLOPS_LICENSE_KEY="${{ inputs.license-key }}"
+        fi
+
         CMD="drillops verify --backup \"${{ inputs.backup-path }}\" --type \"${{ inputs.database-type }}\" --out \"${{ inputs.output-dir }}\""
         if [ -n "${{ inputs.expected-tables }}" ]; then
           CMD="$CMD --tables \"${{ inputs.expected-tables }}\""
+        fi
+        if [ -n "${{ inputs.max-rto-seconds }}" ]; then
+          CMD="$CMD --max-rto-sec \"${{ inputs.max-rto-seconds }}\""
         fi
         if [ -n "${{ inputs.webhook-url }}" ]; then
           CMD="$CMD --notify-webhook \"${{ inputs.webhook-url }}\""
