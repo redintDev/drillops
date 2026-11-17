@@ -191,8 +191,8 @@ jobs:
         uses: redintDev/drillops@v0.2.2
         with:
           backup-path: "./latest_backup.sqlite.gz"
-          engine-type: "sqlite"
-          required-tables: "users,teams,settings,audit_trail"
+          database-type: "sqlite"
+          expected-tables: "users,teams,settings,audit_trail"
           max-rto-seconds: "2"
 
       - name: Archive SOC 2 Auditor Evidence Dossier
@@ -235,7 +235,7 @@ When auditors request documentation for Trust Services Criterion CC9.1:
    ```
 2. **Package Signed Audit Evidence ZIP**:
    ```bash
-   drillops audit-pack --cert-dir ./certificates --out-zip ./soc2_sqlite_dossier.zip
+   drillops audit-pack --cert-dir ./certificates --out ./soc2_sqlite_dossier.zip
    ```
 3. **Verify Compliance Readiness Checklist**:
    ```bash

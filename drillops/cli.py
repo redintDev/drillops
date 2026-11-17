@@ -85,7 +85,7 @@ def parse_args(args: List[str] = None):
     # 'audit-pack' subcommand
     audit_parser = subparsers.add_parser("audit-pack", help="Generate an auditor-ready SOC2/ISO 27001 evidence package")
     audit_parser.add_argument("--cert-dir", default="./certificates", help="Directory containing drill certificates")
-    audit_parser.add_argument("--out", "-o", default="audit_dossier.zip", help="Output ZIP file path")
+    audit_parser.add_argument("--out", "-o", "--out-zip", default="audit_dossier.zip", help="Output ZIP file path")
     audit_parser.add_argument("--days", type=int, default=None, help="Filter to last N days (default: all)")
     audit_parser.add_argument("--company", default="Organization", help="Company/Organization name for the dossier")
 

@@ -138,8 +138,8 @@ jobs:
         uses: redintDev/drillops@v0.2.2
         with:
           backup-path: "s3://my-backup-bucket/postgres/latest.sql.gz"
-          engine-type: "postgres"
-          required-tables: "users,teams,billing_invoices"
+          database-type: "postgres"
+          expected-tables: "users,teams,billing_invoices"
           max-rto-seconds: "180"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_RO_AWS_KEY }}
@@ -162,7 +162,7 @@ When an external auditor asks for your Disaster Recovery evidence:
 1. **Provide the Automated Pipeline Link**: Point the auditor to your scheduled GitHub Actions run history.
 2. **Export the Audit Dossier ZIP**:
    ```bash
-   drillops audit-pack --cert-dir ./certificates --out-zip ./soc2_dossier.zip
+   drillops audit-pack --cert-dir ./certificates --out ./soc2_dossier.zip
    ```
 3. **Verify SHA-256 Signatures**: Demonstrate that the tested backup's SHA-256 hash matches the storage archive digest.
 

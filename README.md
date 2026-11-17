@@ -384,10 +384,10 @@ See [`docs/COMMERCIAL_PRICING.md`](docs/COMMERCIAL_PRICING.md) for full pricing 
 
 ## 🧪 Testing
 
-Run all 184 unit and integration tests:
+Run all 185 unit and integration tests:
 ```bash
 source .venv/bin/activate
 pytest tests/
 ```
-All 184 tests pass in ~30 seconds.
+All 185 tests pass in ~30 seconds.
 
