@@ -32,6 +32,18 @@ Performs comprehensive pre-flight health checks:
 - Service socket reachability
 - Flag `--json`: Outputs machine-readable diagnostics.
 
+### `drillops init`
+Interactive or automated onboarding wizard to bootstrap production-ready disaster recovery configurations and CI/CD pipelines.
+- `--engine {postgres,mysql,mariadb,sqlite}`: Database engine type (default: postgres).
+- `--backup-path PATH`: Path or S3 URI to backup archive.
+- `--tables TABLES`: Comma-separated list of expected critical tables.
+- `--max-rpo-hours HOURS`: RPO freshness SLA threshold (default: 24.0).
+- `--scan-pii` / `--no-scan-pii`: Enable/disable PII scanning for customer secrets.
+- `--ci {github,gitlab}`: Automatically scaffold CI/CD workflow (`.github/workflows/drillops.yml` or `.gitlab-ci.yml`).
+- `--out FILE`: Target configuration file path (default: `drillops.config.json`).
+- `--force`: Overwrite existing files without prompting.
+- `--json`: Output machine-readable JSON status.
+
 ### `drillops verify`
 Executes a single restore drill on a specified backup archive.
 - `--backup PATH`: Path to backup file (.sql, .sql.gz, .dump) or remote URI (`s3://bucket/key`).

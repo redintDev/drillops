@@ -79,6 +79,7 @@
         <div class="max-w-xl mx-auto mb-4">
             <div class="flex items-center justify-center gap-2 mb-3">
                 <button id="tab-btn-curl" onclick="switchQuickstartTab('curl')" class="text-xs font-semibold px-3 py-1 rounded-full bg-indigo-600 text-white transition shadow-sm">1-Line CLI</button>
+                <button id="tab-btn-init" onclick="switchQuickstartTab('init')" class="text-xs font-semibold px-3 py-1 rounded-full bg-slate-800 text-slate-300 hover:text-white transition">Config Wizard (init)</button>
                 <button id="tab-btn-action" onclick="switchQuickstartTab('action')" class="text-xs font-semibold px-3 py-1 rounded-full bg-slate-800 text-slate-300 hover:text-white transition">GitHub Action (CI/CD)</button>
                 <button id="tab-btn-pip" onclick="switchQuickstartTab('pip')" class="text-xs font-semibold px-3 py-1 rounded-full bg-slate-800 text-slate-300 hover:text-white transition">pip install</button>
             </div>
@@ -89,7 +90,13 @@
                 <button onclick="navigator.clipboard.writeText('curl -fsSL https://raw.githubusercontent.com/redintDev/drillops/main/install.sh | bash'); alert('Copied 1-line installer command!');" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3 py-1.5 rounded transition ml-2 shrink-0">Copy</button>
             </div>
 
-            <!-- Tab 2: GitHub Action -->
+            <!-- Tab 2: init wizard -->
+            <div id="tab-content-init" class="hidden bg-slate-900/90 border border-slate-700/80 rounded-xl p-4 flex items-center justify-between font-mono text-xs md:text-sm shadow-2xl">
+                <span class="text-slate-300 text-left truncate"><span class="text-indigo-400">$</span> drillops init --engine postgres --ci github</span>
+                <button onclick="navigator.clipboard.writeText('drillops init --engine postgres --ci github'); alert('Copied drillops init command!');" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3 py-1.5 rounded transition ml-2 shrink-0">Copy</button>
+            </div>
+
+            <!-- Tab 3: GitHub Action -->
             <div id="tab-content-action" class="hidden bg-slate-900/90 border border-slate-700/80 rounded-xl p-4 text-left font-mono text-xs shadow-2xl relative">
                 <div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-800">
                     <span class="text-indigo-400 font-semibold text-[11px]">.github/workflows/restore-drill.yml</span>
@@ -104,7 +111,7 @@
     max-rpo-hours: 24</code></pre>
             </div>
 
-            <!-- Tab 3: pip install -->
+            <!-- Tab 4: pip install -->
             <div id="tab-content-pip" class="hidden bg-slate-900/90 border border-slate-700/80 rounded-xl p-4 flex items-center justify-between font-mono text-xs md:text-sm shadow-2xl">
                 <span class="text-slate-300 text-left truncate"><span class="text-indigo-400">$</span> pip install "git+https://github.com/redintDev/drillops.git" && drillops demo</span>
                 <button onclick="navigator.clipboard.writeText('pip install &quot;git+https://github.com/redintDev/drillops.git&quot; && drillops demo'); alert('Copied pip git install command!');" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-3 py-1.5 rounded transition ml-2 shrink-0">Copy</button>
@@ -121,7 +128,7 @@
             <span class="text-xs text-slate-500">&bull;</span>
             <span class="text-xs text-slate-400 font-mono">0.162s Measured RTO</span>
             <span class="text-xs text-slate-500">&bull;</span>
-            <span class="text-xs text-slate-400 font-mono">185 Passing Tests</span>
+            <span class="text-xs text-slate-400 font-mono">196 Passing Tests</span>
         </div>
         <div class="text-xs text-slate-500 mb-12">Tested on Linux, macOS, WSL &bull; PostgreSQL 16, MySQL 8.0/MariaDB, SQLite 3</div>
     </section>
@@ -612,7 +619,7 @@
 
         // Quickstart Tab Switcher
         function switchQuickstartTab(tab) {
-            ['curl', 'action', 'pip'].forEach(t => {
+            ['curl', 'init', 'action', 'pip'].forEach(t => {
                 const el = document.getElementById(`tab-content-${t}`);
                 const btn = document.getElementById(`tab-btn-${t}`);
                 if (el && btn) {
