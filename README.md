@@ -81,9 +81,11 @@ drillops serve --port 8787
 
 ### 4. Generate SOC2 / ISO 27001 Evidence Dossier
 ```bash
-# Aggregates certificates into printable HTML, Markdown, and manifest ZIP
-drillops audit-pack --cert-dir ./certificates --out audit_dossier.zip --days 90
+# Aggregates certificates into printable HTML, Markdown, SOC2 checklist, and manifest ZIP
+drillops audit-pack --cert-dir ./certificates --out audit_dossier.zip --days 90 --company "Acme Corp"
 ```
+Bundles `AUDIT_DOSSIER.md`, `AUDIT_DOSSIER.html` (printable), `SOC2_DR_CHECKLIST.md` (8-control readiness matrix), and `manifest.json` with cryptographic SHA-256 digests. Outputs evaluated SOC 2 DR Readiness score.  
+*See the [SOC 2 & ISO 27001 Auditor Evidence Dossier Guide](docs/SOC2_AUDIT_GUIDE.md).*
 
 ### 5. Multi-Target Declarative Orchestrator
 ```bash
@@ -322,6 +324,7 @@ drillops check-binlog --binlog-dir /var/log/mysql/binlogs --json
 - 📖 **[MySQL & MariaDB Disaster Recovery Runbook & Automated Verification Guide](docs/MYSQL_DR_RUNBOOK.md)**: A complete technical guide for MySQL & MariaDB DBAs and SREs on automating ephemeral restore drills, continuous binary log (binlog) auditing, measuring sub-second RTO, and compiling SOC 2 CC9.1 / ISO 27001 auditor evidence.
 - 📖 **[SQLite & Embedded Database Disaster Recovery Runbook & Automated Verification Guide](docs/SQLITE_DR_RUNBOOK.md)**: A complete technical guide for Systems Engineers, Edge Developers, and SREs on avoiding WAL "torn copy" traps, continuous Litestream/LiteFS verification, sub-second RTO benchmarking, and compiling SOC 2 CC9.1 / ISO 27001 auditor evidence.
 - 📖 **[Continuous Disaster Recovery Verification in CI/CD Pipelines](docs/CICD_INTEGRATION_GUIDE.md)**: Ready-to-use production recipes for automating scheduled backup restoration drills in GitHub Actions, GitLab CI/CD, Bitbucket Pipelines, CircleCI, and Kubernetes CronJobs.
+- 📖 **[SOC 2 Type II & ISO 27001 Disaster Recovery Audit Evidence Dossier Guide](docs/SOC2_AUDIT_GUIDE.md)**: A complete technical handbook for Compliance Officers, SREs, and Auditors on evaluating disaster recovery evidence dossiers, cryptographic provenance, and mapping controls directly to Vanta, Drata, and Secureframe.
 
 ---
 

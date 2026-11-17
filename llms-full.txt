@@ -64,10 +64,11 @@ Flags:
 - `--json`: Outputs structured audit findings as JSON.
 
 ### `drillops audit-pack`
-Bundles historical certificates, compliance checklists, and executive summaries into a single auditor-ready ZIP dossier.
+Bundles historical certificates, compliance checklists (`SOC2_DR_CHECKLIST.md`), executive summaries (`AUDIT_DOSSIER.md` / `AUDIT_DOSSIER.html`), and cryptographic manifests into an auditor-ready ZIP dossier. Outputs the evaluated SOC 2 DR Readiness score.
 - `--cert-dir DIR`: Certificate directory.
-- `--out FILE`: Target ZIP file path.
+- `--out FILE` / `--out-zip FILE`: Target ZIP file path.
 - `--days N`: Include drills from the past N days (default: 90).
+- `--company NAME`: Organization name for the dossier header.
 
 ### `drillops badge`
 Generates real-time compliance badges for documentation and status pages.
@@ -140,5 +141,6 @@ DrillOps uses an open-core, offline-first licensing model. No telephone-home, no
 - **MySQL & MariaDB DR Runbook**: `docs/MYSQL_DR_RUNBOOK.md` (Ephemeral sandbox restore testing, mysqldump caveats, binary log PITR validation, and SOC 2 CC9.1 evidence generation).
 - **SQLite & Embedded Database DR Runbook**: `docs/SQLITE_DR_RUNBOOK.md` (Ephemeral in-memory sandbox restore testing, WAL "torn copy" traps, Litestream/LiteFS continuous replication validation, and SOC 2 CC9.1 evidence generation).
 - **CI/CD Pipeline Integration Guide**: `docs/CICD_INTEGRATION_GUIDE.md` (Complete practitioner guide for automating scheduled DR restore drills in GitHub Actions, GitLab CI, Bitbucket Pipelines, CircleCI, and Kubernetes).
+- **SOC 2 & ISO 27001 Auditor Evidence Dossier Guide**: `docs/SOC2_AUDIT_GUIDE.md` (Comprehensive practitioner handbook for compliance officers, SREs, and auditors on evaluating disaster recovery evidence dossiers, cryptographic provenance, and mapping controls to Vanta/Drata).
 - **Commercial Pricing Guide**: `docs/COMMERCIAL_PRICING.md` (Detailed feature matrix, tier capabilities, and offline licensing mechanics).
 

@@ -38,13 +38,19 @@
   </url>
   <url>
     <loc>https://redintdev.github.io/drillops/docs/CICD_INTEGRATION_GUIDE.md</loc>
-    <lastmod>2026-11-16</lastmod>
+    <lastmod>2026-11-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://redintdev.github.io/drillops/docs/SOC2_AUDIT_GUIDE.md</loc>
+    <lastmod>2026-11-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://redintdev.github.io/drillops/docs/COMMERCIAL_PRICING.md</loc>
-    <lastmod>2026-11-16</lastmod>
+    <lastmod>2026-11-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
