@@ -161,3 +161,39 @@ def test_generate_mysql_gzip():
         assert "CREATE TABLE IF NOT EXISTS `users`" in decompressed
         assert "ENGINE=InnoDB" in decompressed
 
+
+def test_generate_synthetic_pii_leak():
+    gen = SyntheticDataGenerator(seed=123)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = os.path.join(tmpdir, "pii_test.sqlite")
+        meta = gen.generate_sqlite_file(db_path, num_records=20, corrupt_mode="pii_leak")
+        assert meta["corrupt_mode"] == "pii_leak"
+
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+        cur.execute("SELECT payload_json FROM audit_logs WHERE event_type = 'payment.debug.dump'")
+        row = cur.fetchone()
+        conn.close()
+
+        assert row is not None
+        assert "4111-1111-1111-1111" in row[0]
+        assert "123-45-6789" in row[0]
+
+
+def test_cli_generate_backup_mariadb(tmp_path):
+    from drillops.cli import main
+    sql_path = tmp_path / "mariadb_backup.sql"
+    ret = main([
+        "generate-backup",
+        "--engine", "mariadb",
+        "--records", "25",
+        "--corrupt-mode", "pii_leak",
+        "--out", str(sql_path),
+    ])
+    assert ret == 0
+    assert sql_path.exists()
+    content = sql_path.read_text(encoding="utf-8")
+    assert "CREATE TABLE IF NOT EXISTS `users`" in content
+    assert "4111-1111-1111-1111" in content
+
+

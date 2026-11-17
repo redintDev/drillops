@@ -28,7 +28,11 @@ class SyntheticDataGenerator:
     def __init__(self, seed: int = 42):
         self.rng = random.Random(seed)
 
-    def _generate_dataset(self, num_users: int = 100) -> Tuple[List[Dict], List[Dict], List[Dict], List[Dict]]:
+    def _generate_dataset(
+        self,
+        num_users: int = 100,
+        corrupt_mode: Optional[str] = None,
+    ) -> Tuple[List[Dict], List[Dict], List[Dict], List[Dict]]:
         """Generates synthetic relational records across organizations, users, transactions, and audit logs."""
         num_orgs = max(2, num_users // 10)
         orgs = []
@@ -87,6 +91,16 @@ class SyntheticDataGenerator:
                 "created_at": "2026-03-02 08:30:00",
             })
 
+        if corrupt_mode == "pii_leak":
+            audit_logs.append({
+                "id": len(audit_logs) + 1,
+                "event_type": "payment.debug.dump",
+                "actor_email": "security-audit-test@example.com",
+                "payload_json": '{"unmasked_pan": "4111-1111-1111-1111", "tax_ssn": "123-45-6789"}',
+                "ip_address": "10.0.99.1",
+                "created_at": "2026-03-02 08:35:00",
+            })
+
         return orgs, users, transactions, audit_logs
 
     def generate_sqlite_file(
@@ -102,7 +116,7 @@ class SyntheticDataGenerator:
         if os.path.exists(output_path):
             os.remove(output_path)
 
-        orgs, users, transactions, audit_logs = self._generate_dataset(num_records)
+        orgs, users, transactions, audit_logs = self._generate_dataset(num_records, corrupt_mode=corrupt_mode)
 
         conn = sqlite3.connect(output_path)
         cursor = conn.cursor()
@@ -209,7 +223,7 @@ class SyntheticDataGenerator:
         output_path = os.path.abspath(output_path)
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-        orgs, users, transactions, audit_logs = self._generate_dataset(num_records)
+        orgs, users, transactions, audit_logs = self._generate_dataset(num_records, corrupt_mode=corrupt_mode)
 
         lines = [
             "-- DrillOps Synthetic PostgreSQL Backup Dump",
@@ -328,7 +342,7 @@ class SyntheticDataGenerator:
         output_path = os.path.abspath(output_path)
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-        orgs, users, transactions, audit_logs = self._generate_dataset(num_records)
+        orgs, users, transactions, audit_logs = self._generate_dataset(num_records, corrupt_mode=corrupt_mode)
 
         lines = [
             "-- DrillOps Synthetic MySQL / MariaDB Backup Dump",
