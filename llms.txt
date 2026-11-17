@@ -8,6 +8,7 @@ DrillOps is an autonomous database disaster recovery verification engine. It pro
 - One-line installer: `curl -sSL https://raw.githubusercontent.com/redintDev/drillops/main/install.sh | bash`
 - Interactive Sandbox Demo: `drillops demo`
 - Pre-flight Diagnostic: `drillops doctor`
+- Onboarding Configuration Wizard: `drillops init --engine postgres --ci github`
 - Verify a Backup: `drillops verify --backup ./backups/prod.sql.gz --type postgres --tables users,orgs --out ./certificates`
 - Compliance Checklist: `drillops checklist --eval --out ./SOC2_DR_CHECKLIST.md`
 - Composite GitHub Action: `uses: redintDev/drillops@v0.2`
