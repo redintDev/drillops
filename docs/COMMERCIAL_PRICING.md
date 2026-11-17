@@ -10,15 +10,19 @@ DrillOps uses a developer-first open-core model designed to turn disaster recove
 | :--- | :---: | :---: | :---: |
 | **Pricing** | **$0 / Free Forever** | **$79 / year** | **$199 / year** |
 | **Target Audience** | Solo Devs, OSS projects | Startups, SOC2 candidates | Scale-ups, Multi-cluster teams |
-| **Engine Support (Postgres, SQLite)** | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Engine Support (Postgres, MySQL, MariaDB, SQLite)** | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Interactive Demo (`drillops demo`)** | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Onboarding Configuration Wizard (`drillops init`)** | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Custom SQL Assertions** | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Schema Drift Detection** | ✅ Yes | ✅ Yes | ✅ Yes |
-| **Turnkey CI/CD GitHub Action** | ✅ Yes | ✅ Yes | ✅ Yes |
-| **Monitored Targets** | 1 Target | Up to 10 Targets | **Unlimited** |
+| **Turnkey CI/CD GitHub Action & GitLab CI** | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Monitored Targets** | 1 Target | Up to 10 Targets | **Unlimited Targets** |
 | **Scheduled Watcher Daemon (`drillops watch`)** | Single run | ✅ Continuous Daemon | ✅ Continuous Daemon |
 | **Embedded Web Dashboard (`drillops serve`)** | - | ✅ Full Access | ✅ Full Access |
 | **SOC2 / ISO 27001 ZIP Dossier Packager** | - | ✅ Automated | ✅ White-Label / Custom Branding |
+| **PII & Secret Scanner (SOC2 CC6.1)** | - | ✅ Full Access | ✅ Full Access |
+| **Point-in-Time Recovery (PITR) WAL / Binlog Audit** | - | ✅ Full Access | ✅ Full Access |
+| **3-2-1 Redundancy & Bit-Rot Integrity Auditor** | - | ✅ Full Access | ✅ Full Access |
 | **Multi-Channel Alerting (Slack, Discord, PagerDuty)** | - | ✅ Full Support | ✅ Full Support |
 | **Declarative Multi-Target Orchestrator** | - | ✅ Full Support | ✅ Full Support |
 | **Air-Gapped / Offline Verification** | ✅ Yes | ✅ Cryptographic Token | ✅ Cryptographic Token |
