@@ -134,12 +134,16 @@ def test_export_pack_zip(sample_cert_dir):
             namelist = zf.namelist()
             assert "AUDIT_DOSSIER.md" in namelist
             assert "AUDIT_DOSSIER.html" in namelist
+            assert "SOC2_DR_CHECKLIST.md" in namelist
             assert "manifest.json" in namelist
             assert any(n.startswith("certificates/drill_cert_") for n in namelist)
 
             manifest_data = json.loads(zf.read("manifest.json").decode("utf-8"))
             assert manifest_data["organization"] == "Acme Global"
             assert manifest_data["metrics"]["total_drills"] == 2
+            assert "soc2_dr_checklist" in manifest_data
+            assert manifest_data["soc2_dr_checklist"]["total_controls"] == 8
+            assert manifest_data["soc2_dr_checklist"]["verified_controls"] >= 1
 
 
 def test_cli_audit_pack_out_zip(sample_cert_dir, tmp_path):
@@ -158,4 +162,5 @@ def test_cli_audit_pack_out_zip(sample_cert_dir, tmp_path):
         namelist = zf.namelist()
         assert "AUDIT_DOSSIER.md" in namelist
         assert "AUDIT_DOSSIER.html" in namelist
+        assert "SOC2_DR_CHECKLIST.md" in namelist
         assert "manifest.json" in namelist

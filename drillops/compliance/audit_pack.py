@@ -344,11 +344,17 @@ class AuditPackGenerator:
         md_content = self.generate_markdown_dossier(metrics, certificates, company_name=company_name)
         html_content = self.generate_html_dossier(metrics, certificates, company_name=company_name)
 
+        from drillops.compliance.checklist import SOC2ChecklistEvaluator
+        checklist_evaluator = SOC2ChecklistEvaluator(cert_dir=self.cert_dir)
+        checklist_md = checklist_evaluator.to_markdown(company=company_name)
+        checklist_controls = checklist_evaluator.evaluate(company=company_name)
+        compliant_controls = sum(1 for c in checklist_controls if c.status in ("COMPLIANT", "READY"))
+
         manifest = {
             "dossier_version": "1.0",
             "organization": company_name,
             "generated_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            "compliance_standards": ["SOC2_TYPE_II_CC7.4", "ISO_27001_A.8.13"],
+            "compliance_standards": ["SOC2_TYPE_II_CC7.4", "ISO_27001_A.8.13", "SOC2_TYPE_II_CC9.1"],
             "metrics": {
                 "total_drills": metrics.total_drills,
                 "passed_drills": metrics.passed_drills,
@@ -357,6 +363,11 @@ class AuditPackGenerator:
                 "avg_rto_seconds": metrics.avg_rto_seconds,
                 "max_rto_seconds": metrics.max_rto_seconds,
                 "total_assertions": metrics.total_assertions,
+            },
+            "soc2_dr_checklist": {
+                "readiness_score_pct": round((compliant_controls / len(checklist_controls)) * 100, 1),
+                "verified_controls": compliant_controls,
+                "total_controls": len(checklist_controls),
             },
             "certificates": [
                 {
@@ -375,6 +386,7 @@ class AuditPackGenerator:
         with zipfile.ZipFile(output_zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
             zf.writestr("AUDIT_DOSSIER.md", md_content)
             zf.writestr("AUDIT_DOSSIER.html", html_content)
+            zf.writestr("SOC2_DR_CHECKLIST.md", checklist_md)
             zf.writestr("manifest.json", json.dumps(manifest, indent=2))
 
             for c in certificates:
