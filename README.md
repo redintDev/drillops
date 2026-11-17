@@ -70,7 +70,7 @@ drillops verify \
   --s3-endpoint-url "https://<account_id>.r2.cloudflarestorage.com"
 ```
 
-### 2. Run the Automated Watcher Daemon (Local Directory or S3 Bucket)
+### 3. Run the Automated Watcher Daemon (Local Directory or S3 Bucket)
 ```bash
 # Continuously monitors local backup directory
 drillops watch --dir /var/backups --type postgres --out ./certificates
@@ -83,13 +83,13 @@ drillops watch \
   --out ./certificates
 ```
 
-### 3. Launch Compliance Dashboard & API
+### 4. Launch Compliance Dashboard & API
 ```bash
 # Starts embedded dark-mode dashboard on port 8787
 drillops serve --port 8787
 ```
 
-### 4. Generate SOC2 / ISO 27001 Evidence Dossier
+### 5. Generate SOC2 / ISO 27001 Evidence Dossier
 ```bash
 # Aggregates certificates into printable HTML, Markdown, SOC2 checklist, and manifest ZIP
 drillops audit-pack --cert-dir ./certificates --out audit_dossier.zip --days 90 --company "Acme Corp"
@@ -97,13 +97,13 @@ drillops audit-pack --cert-dir ./certificates --out audit_dossier.zip --days 90 
 Bundles `AUDIT_DOSSIER.md`, `AUDIT_DOSSIER.html` (printable), `SOC2_DR_CHECKLIST.md` (8-control readiness matrix), and `manifest.json` with cryptographic SHA-256 digests. Outputs evaluated SOC 2 DR Readiness score.  
 *See the [SOC 2 & ISO 27001 Auditor Evidence Dossier Guide](docs/SOC2_AUDIT_GUIDE.md).*
 
-### 5. Multi-Target Declarative Orchestrator
+### 6. Multi-Target Declarative Orchestrator
 ```bash
 # Orchestrate drills across multiple databases concurrently
 drillops orchestrate --config drillops_targets.json --once
 ```
 
-### 6. Inspect & Activate Offline Commercial Licenses
+### 7. Inspect & Activate Offline Commercial Licenses
 ```bash
 # Inspect current license state and active tier limits
 drillops license info
@@ -118,7 +118,7 @@ drillops license info
 Generate free 14-day evaluation keys or request commercial Pro/Enterprise licenses at:
 👉 **[https://redintdev.github.io/drillops/](https://redintdev.github.io/drillops/)**
 
-### 7. Turnkey GitHub Action
+### 8. Turnkey GitHub Action
 Verify database restore drills automatically in your GitHub Actions CI/CD pipelines:
 ```yaml
 - name: Verify Database Restore Drill & Certify SOC2
@@ -132,7 +132,7 @@ Verify database restore drills automatically in your GitHub Actions CI/CD pipeli
 *See production-ready CI/CD, systemd, and target templates in [`examples/`](examples/).*
 
 
-### 8. SOC2 CC9.1 & ISO 27001 Audit Preparation Checklist
+### 9. SOC2 CC9.1 & ISO 27001 Audit Preparation Checklist
 Evaluate disaster recovery readiness across 8 key SOC2/ISO audit controls and export audit-ready markdown reports:
 ```bash
 # Terminal audit overview with readiness scoring
@@ -143,7 +143,7 @@ drillops checklist --out ./SOC2_DR_CHECKLIST.md --company "Acme Corp"
 drillops checklist --json
 ```
 
-### 9. Disaster Recovery Compliance Badges
+### 10. Disaster Recovery Compliance Badges
 Generate cryptographic SVG badges and Shields.io JSON endpoints to showcase verified DR readiness in GitHub READMEs, status pages, and auditor trust portals:
 ```bash
 # Generate standalone SVG badge
@@ -154,7 +154,7 @@ drillops badge --cert-dir ./certificates --shields-json
 drillops badge --markdown --out ./drillops_badge.svg
 ```
 
-### 10. System Pre-Flight Diagnostics (`drillops doctor`)
+### 11. System Pre-Flight Diagnostics (`drillops doctor`)
 Run comprehensive environment and connectivity health checks before executing database restore drills:
 ```bash
 # Terminal diagnostics report
@@ -164,7 +164,7 @@ drillops doctor
 drillops doctor --json
 ```
 
-### 11. Linux Systemd Background Service Generator (`drillops systemd`)
+### 12. Linux Systemd Background Service Generator (`drillops systemd`)
 Generate hardened production systemd unit files to run DrillOps watcher daemons persistently across reboots:
 ```bash
 # Generate service unit file
@@ -176,7 +176,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now drillops
 ```
 
-### 12. Enterprise Compliance & Incident Integrations (Vanta, Drata, PagerDuty)
+### 13. Enterprise Compliance & Incident Integrations (Vanta, Drata, PagerDuty)
 Automatically dispatch restore drill audit proofs directly to continuous compliance platforms or on-call paging systems:
 ```bash
 # Verify backup and upload evidence directly to Vanta & Drata custom test webhooks
@@ -191,7 +191,7 @@ drillops notify-test --type vanta --webhook "https://api.vanta.com/v1/custom_tes
 drillops notify-test --type drata --webhook "https://public-api.drata.com/public/compliance/tests/dr-01"
 ```
 
-### 13. Prometheus Metrics Exporter & Observability (`drillops metrics` / `/metrics`)
+### 14. Prometheus Metrics Exporter & Observability (`drillops metrics` / `/metrics`)
 Export database restore drill health, compliance states, and RTO latency gauges directly to Prometheus, Grafana Agent, or Datadog:
 ```bash
 # Export Prometheus text exposition metrics to stdout
@@ -205,7 +205,7 @@ drillops metrics --cert-dir ./certificates --json
 ```
 When running the embedded dashboard server (`drillops serve`), the `/metrics` endpoint is exposed out-of-the-box for Prometheus scrapers (`http://localhost:8787/metrics`).
 
-### 14. Encrypted Backup Verification & Ephemeral Decryption (SOC2 CC6.1)
+### 15. Encrypted Backup Verification & Ephemeral Decryption (SOC2 CC6.1)
 Verify database backups encrypted at rest using OpenSSL (`.enc`, `.aes`) or GPG (`.gpg`, `.pgp`) with automatic ephemeral decryption into isolated sandboxes and zero disk footprint:
 ```bash
 # Verify an AES-256-CBC encrypted backup
@@ -220,7 +220,7 @@ drillops verify --backup ./backups/prod.dump.enc --type postgres
 ```
 When an encrypted backup is verified, DrillOps automatically issues a verified **SOC2 CC6.1 Data at Rest Encryption** compliance assertion in the generated audit certificate.
 
-### 15. Automated PII & Sensitive Data Leak Scanner (SOC2 CC6.1 / GDPR / PCI-DSS)
+### 16. Automated PII & Sensitive Data Leak Scanner (SOC2 CC6.1 / GDPR / PCI-DSS)
 Ensure database backup copies and staging restores do not contain raw unmasked card numbers, SSNs, AWS access keys, private keys, or plaintext passwords:
 ```bash
 # Scan backup sandbox for unmasked PII & secrets
@@ -234,7 +234,7 @@ drillops verify --backup ./backups/prod.dump --type postgres --scan-pii
 ```
 When enabled during `drillops verify --scan-pii`, a formal **SOC2 CC6.1 Data Sanitization & Leak Prevention** assertion is evaluated and certified in the audit pack.
 
-### 16. Recovery Point Objective (RPO) & Backup Freshness SLA Auditor (SOC2 CC9.1 / HIPAA)
+### 17. Recovery Point Objective (RPO) & Backup Freshness SLA Auditor (SOC2 CC9.1 / HIPAA)
 Proves backup freshness and catches silent backup pipeline failures before auditors or disasters strike:
 ```bash
 # Audit backup age and enforce Recovery Point Objective (RPO) SLA threshold (e.g. 24 hours)
@@ -248,7 +248,7 @@ drillops verify --backup ./backups/prod.dump --type postgres --max-rpo-hours 24
 ```
 When `--max-rpo-hours` is configured, DrillOps inspects dump headers, filename timestamps, and metadata to certify **SOC2 CC9.1 / HIPAA §164.308 / ISO 27001 A.12.3.1 RPO Freshness** compliance.
 
-### 17. Automated 3-2-1 Backup Redundancy & Offsite Parity Auditor (SOC2 CC9.1 / ISO 27001)
+### 18. Automated 3-2-1 Backup Redundancy & Offsite Parity Auditor (SOC2 CC9.1 / ISO 27001)
 Proves compliance with the gold standard 3-2-1 disaster recovery rule (3 copies of data, 2 distinct media types, 1 offsite copy):
 ```bash
 # Audit primary backup against cold-storage replica (e.g. local vs AWS S3 / Cloudflare R2)
@@ -270,7 +270,7 @@ drillops verify \
 ```
 When configured with `--replica`, DrillOps calculates cryptographic SHA-256 hashes across all copies, measures replication lag, verifies storage media isolation, and injects a formal **SOC2 CC9.1 3-2-1 Redundancy & Replica Parity** assertion into the audit certificate.
 
-### 18. Cold-Storage Bit-Rot & Checksum Manifest Auditor
+### 19. Cold-Storage Bit-Rot & Checksum Manifest Auditor
 Detects silent bit flips, truncated downloads, and corrupted archive headers in cold storage:
 ```bash
 # Inspect backup archive for stream corruption, truncation, or CRC32 errors
@@ -286,7 +286,7 @@ drillops check-integrity --backup ./backups/prod.sql.gz --generate-manifest
 drillops verify --backup ./backups/prod.sql.gz --type postgres --verify-integrity
 ```
 
-### 19. Executive Disaster Recovery Audit Report Generator (`drillops report`)
+### 20. Executive Disaster Recovery Audit Report Generator (`drillops report`)
 Produces standalone, publication-ready, CSS-styled HTML & PDF audit dossiers for executive sign-off and auditor review:
 ```bash
 # Generate CISO executive disaster recovery report from certificate JSON
@@ -301,7 +301,7 @@ The executive report encapsulates the complete Disaster Recovery Triad:
 - **Pillar 3: 3-2-1 Redundancy**: Multi-copy tracking across storage tiers, media isolation, and offsite parity.
 - **Security & Attestation**: SOC2 CC6.1 encryption at rest, PII leak scans, cold-storage bit-rot status, and CISO / Lead Engineer sign-off blocks.
 
-### 20. PostgreSQL Point-in-Time Recovery (PITR) WAL Continuity Validator (`drillops check-pitr`)
+### 21. PostgreSQL Point-in-Time Recovery (PITR) WAL Continuity Validator (`drillops check-pitr`)
 Validates that continuous PostgreSQL Write-Ahead Log (WAL) archives stored on local disks or cloud storage buckets are unbroken and free of sequence gaps:
 ```bash
 # Audit PostgreSQL WAL archive directory for sequence continuity
@@ -315,7 +315,7 @@ drillops check-pitr --wal-dir /var/lib/postgresql/wal_archive --json
 - Validates 16MB standard segment sizing to detect truncated uploads and network write failures.
 - Checks binary header magic bytes (`0xD07F` for PG16, `0xD07E` for PG15, `0xD07D` for PG14).
 
-### 21. MySQL & MariaDB Binary Log (binlog) Continuity Validator (`drillops check-binlog`)
+### 22. MySQL & MariaDB Binary Log (binlog) Continuity Validator (`drillops check-binlog`)
 Validates that continuous MySQL / MariaDB binary log replication and point-in-time recovery streams are unbroken, properly indexed, and free of missing sequence segments:
 ```bash
 # Audit MySQL / MariaDB binlog directory for sequence continuity
@@ -329,7 +329,7 @@ drillops check-binlog --binlog-dir /var/log/mysql/binlogs --json
 - Inspects 4-byte magic headers (`\xfebin` / `0xFE 0x62 0x69 0x6E`) for file integrity validation.
 - Verifies `.index` catalog reconciliation when binlog index files exist on disk.
 
-### 22. Technical Runbooks & Compliance Guides
+### 23. Technical Runbooks & Compliance Guides
 - 📖 **[PostgreSQL Disaster Recovery SLA Runbook & Automated Verification Guide](docs/POSTGRES_DR_RUNBOOK.md)**: A complete technical guide for PostgreSQL DBAs and SREs on automating ephemeral restore drills, measuring sub-second RTO, and compiling SOC 2 CC9.1 / ISO 27001 auditor evidence.
 - 📖 **[MySQL & MariaDB Disaster Recovery Runbook & Automated Verification Guide](docs/MYSQL_DR_RUNBOOK.md)**: A complete technical guide for MySQL & MariaDB DBAs and SREs on automating ephemeral restore drills, continuous binary log (binlog) auditing, measuring sub-second RTO, and compiling SOC 2 CC9.1 / ISO 27001 auditor evidence.
 - 📖 **[SQLite & Embedded Database Disaster Recovery Runbook & Automated Verification Guide](docs/SQLITE_DR_RUNBOOK.md)**: A complete technical guide for Systems Engineers, Edge Developers, and SREs on avoiding WAL "torn copy" traps, continuous Litestream/LiteFS verification, sub-second RTO benchmarking, and compiling SOC 2 CC9.1 / ISO 27001 auditor evidence.
