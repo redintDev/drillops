@@ -1,0 +1,59 @@
+# In-Cluster Kubernetes CronJob for DrillOps Air-Gapped / VPC-Isolated Restore Drills
+# Apply to your cluster: kubectl apply -f drillops-cronjob.example.yaml
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: drillops-nightly-verification
+  namespace: data-platform
+  labels:
+    app.kubernetes.io/name: drillops
+    app.kubernetes.io/component: disaster-recovery-verifier
+spec:
+  schedule: "0 2 * * *"  # Nightly at 02:00 UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 30
+  failedJobsHistoryLimit: 7
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: drillops
+              image: python:3.12-slim
+              command: ["/bin/bash", "-c"]
+              args:
+                - |
+                  set -euo pipefail
+                  apt-get update && apt-get install -y --no-install-recommends postgresql-client curl ca-certificates
+                  pip install --no-cache-dir "git+https://github.com/redintDev/drillops.git"
+                  drillops doctor
+                  drillops verify \
+                    --backup /vault/backups/daily_prod.sql.gz \
+                    --type postgres \
+                    --tables users,organizations,transactions \
+                    --max-rto-seconds 300 \
+                    --scan-pii \
+                    --out /evidence
+                  drillops audit-pack \
+                    --cert-dir /evidence \
+                    --out-zip /evidence/soc2_audit_dossier.zip \
+                    --days 90 \
+                    --company "${COMPANY_NAME:-Organization}"
+              env:
+                - name: COMPANY_NAME
+                  value: "Organization"
+              volumeMounts:
+                - name: backup-volume
+                  mountPath: /vault/backups
+                  readOnly: true
+                - name: evidence-volume
+                  mountPath: /evidence
+          volumes:
+            - name: backup-volume
+              persistentVolumeClaim:
+                claimName: prod-backups-pvc
+            - name: evidence-volume
+              persistentVolumeClaim:
+                claimName: drillops-evidence-pvc

@@ -30,6 +30,8 @@ jobs:
           database-type: "postgres" # Options: postgres, mysql, mariadb, sqlite
           expected-tables: "users,organizations,transactions,audit_logs"
           output-dir: "./certificates"
+          scan-pii: "true"
+          max-rpo-hours: "24"
           # Optional: Alert on drill failure
           # slack-webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
 
