@@ -140,3 +140,22 @@ def test_export_pack_zip(sample_cert_dir):
             manifest_data = json.loads(zf.read("manifest.json").decode("utf-8"))
             assert manifest_data["organization"] == "Acme Global"
             assert manifest_data["metrics"]["total_drills"] == 2
+
+
+def test_cli_audit_pack_out_zip(sample_cert_dir, tmp_path):
+    """Verify that 'drillops audit-pack --out-zip' works identically to '--out'."""
+    from drillops.cli import main
+    zip_path = tmp_path / "cli_dossier.zip"
+    ret = main([
+        "audit-pack",
+        "--cert-dir", sample_cert_dir,
+        "--out-zip", str(zip_path),
+        "--company", "TestCorp",
+    ])
+    assert ret == 0
+    assert zip_path.exists()
+    with zipfile.ZipFile(str(zip_path), "r") as zf:
+        namelist = zf.namelist()
+        assert "AUDIT_DOSSIER.md" in namelist
+        assert "AUDIT_DOSSIER.html" in namelist
+        assert "manifest.json" in namelist

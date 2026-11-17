@@ -59,8 +59,8 @@ jobs:
         uses: redintDev/drillops@v0.2.2
         with:
           backup-path: "s3://production-backups-vault/postgres/prod_db_latest.sql.gz"
-          engine-type: "postgres"
-          required-tables: "users,organizations,billing_invoices,audit_log"
+          database-type: "postgres"
+          expected-tables: "users,organizations,billing_invoices,audit_log"
           max-rto-seconds: "180"
           output-dir: "certificates"
         env:
@@ -127,7 +127,7 @@ jobs:
       - name: Generate Executive Compliance Report (HTML)
         run: |
           drillops report --cert-dir ./certificates --out ./dr_executive_report.html
-          drillops audit-pack --cert-dir ./certificates --out-zip ./soc2_audit_pack.zip
+          drillops audit-pack --cert-dir ./certificates --out ./soc2_audit_pack.zip
 
       - name: Upload Compliance Dossier
         uses: actions/upload-artifact@v4
@@ -170,7 +170,7 @@ verify_database_dr:
         --s3-endpoint-url $S3_ENDPOINT_URL
         --out ./certificates
     - drillops report --cert-dir ./certificates --out ./certificates/executive_dr_report.html
-    - drillops audit-pack --cert-dir ./certificates --out-zip ./certificates/soc2_gitlab_dossier.zip
+    - drillops audit-pack --cert-dir ./certificates --out ./certificates/soc2_gitlab_dossier.zip
   variables:
     AWS_ACCESS_KEY_ID: $BACKUP_VAULT_KEY_ID
     AWS_SECRET_ACCESS_KEY: $BACKUP_VAULT_SECRET
@@ -206,7 +206,7 @@ pipelines:
             - drillops doctor
             - drillops verify --backup $BACKUP_S3_URI --type postgres --tables users,accounts --out ./certs
             - drillops report --cert-dir ./certs --out ./certs/executive_report.html
-            - drillops audit-pack --cert-dir ./certs --out-zip ./certs/soc2_dossier.zip
+            - drillops audit-pack --cert-dir ./certs --out ./certs/soc2_dossier.zip
           artifacts:
             - certs/**
 ```
@@ -242,7 +242,7 @@ jobs:
               --tables users,organizations \
               --max-rto-seconds 180 \
               --out ./certificates
-            drillops audit-pack --cert-dir ./certificates --out-zip ./certificates/soc2_audit_pack.zip
+            drillops audit-pack --cert-dir ./certificates --out ./certificates/soc2_audit_pack.zip
       - store_artifacts:
           path: ./certificates
           destination: dr-evidence

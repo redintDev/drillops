@@ -13,8 +13,16 @@ inputs:
     description: "Database engine ('sqlite', 'postgres', 'mysql', or 'mariadb')"
     required: false
     default: "sqlite"
+  engine-type:
+    description: "Alias for database-type ('sqlite', 'postgres', 'mysql', or 'mariadb')"
+    required: false
+    default: ""
   expected-tables:
     description: "Comma-separated list of critical tables that must exist and contain data"
+    required: false
+    default: ""
+  required-tables:
+    description: "Alias for expected-tables (comma-separated list of critical tables)"
     required: false
     default: ""
   scan-pii:
@@ -83,9 +91,19 @@ runs:
           export DRILLOPS_LICENSE_KEY="${{ inputs.license-key }}"
         fi
 
-        CMD="drillops verify --backup \"${{ inputs.backup-path }}\" --type \"${{ inputs.database-type }}\" --out \"${{ inputs.output-dir }}\""
-        if [ -n "${{ inputs.expected-tables }}" ]; then
-          CMD="$CMD --tables \"${{ inputs.expected-tables }}\""
+        DB_TYPE="${{ inputs.database-type }}"
+        if [ -n "${{ inputs.engine-type }}" ]; then
+          DB_TYPE="${{ inputs.engine-type }}"
+        fi
+
+        TABLES="${{ inputs.expected-tables }}"
+        if [ -n "${{ inputs.required-tables }}" ]; then
+          TABLES="${{ inputs.required-tables }}"
+        fi
+
+        CMD="drillops verify --backup \"${{ inputs.backup-path }}\" --type \"$DB_TYPE\" --out \"${{ inputs.output-dir }}\""
+        if [ -n "$TABLES" ]; then
+          CMD="$CMD --tables \"$TABLES\""
         fi
         if [ "${{ inputs.scan-pii }}" = "true" ]; then
           CMD="$CMD --scan-pii"
