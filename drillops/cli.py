@@ -187,6 +187,21 @@ def parse_args(args: List[str] = None):
     binlog_parser.add_argument("--prefix", "-p", help="Optional binlog filename prefix (e.g. mysql-bin or binlog)")
     binlog_parser.add_argument("--json", action="store_true", help="Output machine-readable JSON report")
 
+    # 'init' subcommand
+    init_parser = subparsers.add_parser("init", help="Bootstrap a production-ready DrillOps disaster recovery configuration")
+    init_parser.add_argument("--engine", "-e", choices=["postgres", "mysql", "mariadb", "sqlite"], default="postgres", help="Target database engine (default: postgres)")
+    init_parser.add_argument("--backup-path", "-b", help="Path or s3:// URI to database backup file")
+    init_parser.add_argument("--tables", "-t", help="Comma-separated list of expected critical tables")
+    init_parser.add_argument("--max-rpo-hours", type=float, default=24.0, help="Maximum allowed backup age in hours (default: 24.0)")
+    init_parser.add_argument("--scan-pii", action="store_true", default=True, help="Enable automatic PII scanning for unmasked customer secrets (default: True)")
+    init_parser.add_argument("--no-scan-pii", action="store_false", dest="scan_pii", help="Disable PII scanning")
+    init_parser.add_argument("--notify-webhook", help="Webhook URL for drill completion alerts")
+    init_parser.add_argument("--notify-slack", help="Slack webhook URL for alerts")
+    init_parser.add_argument("--ci", choices=["github", "gitlab"], help="Scaffold CI/CD automated workflow file (.github/workflows/drillops.yml or .gitlab-ci.yml)")
+    init_parser.add_argument("--out", "-o", default="drillops.config.json", help="Output path for config file (default: drillops.config.json)")
+    init_parser.add_argument("--force", "-f", action="store_true", help="Overwrite existing configuration file without prompting")
+    init_parser.add_argument("--json", action="store_true", help="Output machine-readable JSON status")
+
     return parser.parse_args(args)
 
 
@@ -832,6 +847,76 @@ def main(args: List[str] = None) -> int:
             print(BinlogValidator.format_terminal_report(report))
 
         return 0 if report.is_continuous else 1
+
+    elif parsed.command == "init":
+        from drillops.system.init import ConfigWizard
+
+        tables = [t.strip() for t in parsed.tables.split(",") if t.strip()] if getattr(parsed, "tables", None) else None
+        config_dict = ConfigWizard.generate_config(
+            engine=parsed.engine,
+            backup_path=getattr(parsed, "backup_path", None),
+            tables=tables,
+            max_rpo_hours=parsed.max_rpo_hours,
+            scan_pii=parsed.scan_pii,
+            notify_webhook=getattr(parsed, "notify_webhook", None),
+            notify_slack=getattr(parsed, "notify_slack", None),
+        )
+
+        try:
+            saved_config = ConfigWizard.save_config(
+                config_dict=config_dict,
+                output_path=parsed.out,
+                overwrite=parsed.force,
+            )
+        except FileExistsError as e:
+            print(f"❌ Error: {e}", file=sys.stderr)
+            return 1
+
+        saved_ci = None
+        if getattr(parsed, "ci", None):
+            try:
+                saved_ci = ConfigWizard.save_ci_workflow(
+                    ci_type=parsed.ci,
+                    config_path=os.path.basename(saved_config),
+                    overwrite=parsed.force,
+                )
+            except FileExistsError as e:
+                print(f"❌ Error saving CI workflow: {e}", file=sys.stderr)
+                return 1
+
+        if parsed.json:
+            print(json.dumps({
+                "status": "success",
+                "config_file": saved_config,
+                "engine": parsed.engine,
+                "ci_file": saved_ci,
+                "config": config_dict,
+            }, indent=2))
+        else:
+            print("\n" + "=" * 70)
+            print("  🚀  DRILLOPS DISASTER RECOVERY CONFIGURATION WIZARD")
+            print("=" * 70 + "\n")
+            print(f"  ✔ Generated configuration file : {saved_config}")
+            print(f"  ✔ Target Database Engine      : {config_dict['database_type']} (port: {config_dict.get('port', 'N/A')})")
+            print(f"  ✔ Backup Target Path          : {config_dict['backup_path']}")
+            print(f"  ✔ Expected Critical Tables    : {', '.join(config_dict['expected_tables'])}")
+            print(f"  ✔ RPO SLA Target Window       : <= {config_dict['max_rpo_hours']} hours")
+            print(f"  ✔ SOC 2 CC6.1 PII Scanning    : {'ENABLED' if config_dict['scan_pii'] else 'DISABLED'}")
+            print(f"  ✔ Data Assertions Defined     : {len(config_dict.get('assertion_rules', []))} verification queries")
+            if saved_ci:
+                print(f"  ✔ Scaffolding CI/CD Workflow  : {saved_ci}")
+            print("\n  " + "-" * 66)
+            print("  Next Steps to Run Your First Verification Drill:")
+            print("  " + "-" * 66)
+            print(f"  1. Inspect or customize your generated configuration:")
+            print(f"     cat {saved_config}\n")
+            print(f"  2. Verify your database backup restore SLA & assertions:")
+            print(f"     drillops verify --config {saved_config}\n")
+            print(f"  3. Package SOC 2 CC9.1 / ISO 27001 evidence dossier:")
+            print(f"     drillops audit-pack --cert-dir ./certificates --out-zip audit_pack.zip\n")
+            print("=" * 70 + "\n")
+
+        return 0
 
     return 0
 

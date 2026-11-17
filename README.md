@@ -43,7 +43,17 @@ git clone https://github.com/redintDev/drillops.git && cd drillops && pip instal
 
 ## 🚀 Key Commands
 
-### 1. Verify a Single Backup (Local or Cloud S3 / Cloudflare R2)
+### 1. Bootstrap Disaster Recovery Configuration (`drillops init`)
+Generate a production-ready disaster recovery verification configuration and optional CI/CD workflow:
+```bash
+# Bootstrap configuration for PostgreSQL, MySQL, MariaDB, or SQLite
+drillops init --engine postgres --tables users,organizations,audit_logs
+
+# Or scaffold configuration plus CI/CD automated workflow (.github/workflows/drillops.yml)
+drillops init --engine mariadb --ci github --out drillops.config.json
+```
+
+### 2. Verify a Single Backup (Local or Cloud S3 / Cloudflare R2)
 ```bash
 # Verify local backup (PostgreSQL, MySQL, MariaDB, or SQLite)
 drillops verify \
@@ -387,10 +397,10 @@ See [`docs/COMMERCIAL_PRICING.md`](docs/COMMERCIAL_PRICING.md) for full pricing 
 
 ## 🧪 Testing
 
-Run all 185 unit and integration tests:
+Run all 196 unit and integration tests:
 ```bash
 source .venv/bin/activate
 pytest tests/
 ```
-All 185 tests pass in ~30 seconds.
+All 196 tests pass in ~30 seconds.
 
