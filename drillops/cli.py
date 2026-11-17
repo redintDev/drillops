@@ -436,11 +436,18 @@ def main(args: List[str] = None) -> int:
         )
         certs = generator.load_certificates(days=parsed.days)
         metrics = generator.calculate_metrics(certs)
+        from drillops.compliance.checklist import SOC2ChecklistEvaluator
+        evaluator = SOC2ChecklistEvaluator(parsed.cert_dir)
+        controls = evaluator.evaluate(company=parsed.company)
+        compliant_n = sum(1 for c in controls if c.status in ("COMPLIANT", "READY"))
+        pct = round((compliant_n / len(controls)) * 100, 1)
+
         print(f"✅ Audit Dossier created successfully: {zip_path}")
-        print(f"   Total Drills:    {metrics.total_drills}")
-        print(f"   Pass Rate:       {metrics.success_rate_pct}%")
-        print(f"   Avg RTO:         {metrics.avg_rto_seconds}s")
-        print(f"   Assertions:      {metrics.passed_assertions}/{metrics.total_assertions}")
+        print(f"   Total Drills:      {metrics.total_drills}")
+        print(f"   Pass Rate:         {metrics.success_rate_pct}%")
+        print(f"   Avg RTO:           {metrics.avg_rto_seconds}s")
+        print(f"   Assertions:        {metrics.passed_assertions}/{metrics.total_assertions}")
+        print(f"   SOC2 DR Readiness: {pct}% ({compliant_n}/{len(controls)} controls)")
         return 0
 
     elif parsed.command == "generate-backup":
