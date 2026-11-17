@@ -26,6 +26,18 @@ def test_system_doctor_diagnostics_baseline():
     assert "Storage" in categories
     assert "Licensing" in categories
 
+    names = {c.name for c in checks}
+    assert "Python Version" in names
+    assert "SQLite Engine" in names
+    assert "PostgreSQL Binaries" in names
+    assert "PostgreSQL Service" in names
+    assert "MySQL / MariaDB Binaries" in names
+    assert "MySQL / MariaDB Service" in names
+    assert "Certificates Directory" in names
+    assert "Compression & Security" in names
+    assert "Disk Capacity" in names
+    assert "Commercial License" in names
+
     assert doc.is_healthy(checks) is True
 
 
