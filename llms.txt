@@ -18,6 +18,7 @@ DrillOps is an autonomous database disaster recovery verification engine. It pro
 - [MySQL & MariaDB DR Runbook](docs/MYSQL_DR_RUNBOOK.md): Complete practitioner guide for MySQL and MariaDB DBAs on mysqldump restore verification, binary log (binlog) auditing, and SOC 2 CC9.1 compliance.
 - [SQLite & Embedded Database DR Runbook](docs/SQLITE_DR_RUNBOOK.md): Complete practitioner guide for Systems Engineers and SREs on WAL safe backups, Litestream replication auditing, and SOC 2 CC9.1 compliance.
 - [CI/CD Pipeline Integration Guide](docs/CICD_INTEGRATION_GUIDE.md): Complete practitioner guide for automating scheduled DR restore drills in GitHub Actions, GitLab CI, Bitbucket Pipelines, CircleCI, and Kubernetes.
+- [SOC 2 & ISO 27001 Auditor Evidence Dossier Guide](docs/SOC2_AUDIT_GUIDE.md): Complete practitioner guide for compliance officers, SREs, and auditors on evaluating disaster recovery evidence dossiers and mapping controls to Vanta/Drata.
 - [Commercial Pricing & Feature Matrix](docs/COMMERCIAL_PRICING.md): Detailed comparison across Community ($0), Pro ($79/yr), and Enterprise ($199/yr).
 - [Public Web Portal](https://redintdev.github.io/drillops/): Interactive risk calculator, web demo, and live evaluation key minting.
 - [Public GitHub Repository](https://github.com/redintDev/drillops): Source code, GitHub Actions workflow, issues, and documentation.
