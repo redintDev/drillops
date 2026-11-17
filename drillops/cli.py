@@ -91,11 +91,11 @@ def parse_args(args: List[str] = None):
 
     # 'generate-backup' subcommand
     gen_parser = subparsers.add_parser("generate-backup", help="Generate synthetic test backups with optional corruption")
-    gen_parser.add_argument("--engine", choices=["sqlite", "postgres", "mysql"], default="sqlite", help="Target engine")
+    gen_parser.add_argument("--engine", choices=["sqlite", "postgres", "mysql", "mariadb"], default="sqlite", help="Target engine")
     gen_parser.add_argument("--records", type=int, default=500, help="Number of synthetic user records")
     gen_parser.add_argument("--out", "-o", required=True, help="Output backup path")
-    gen_parser.add_argument("--compress", action="store_true", help="Compress with gzip (Postgres/MySQL only)")
-    gen_parser.add_argument("--corrupt-mode", choices=["none", "truncate", "header_garbage", "drop_table", "syntax_error"], default="none", help="Simulate backup defect")
+    gen_parser.add_argument("--compress", action="store_true", help="Compress with gzip (Postgres/MySQL/MariaDB only)")
+    gen_parser.add_argument("--corrupt-mode", choices=["none", "truncate", "header_garbage", "drop_table", "syntax_error", "pii_leak"], default="none", help="Simulate backup defect or PII leak")
 
 
     # 'notify-test' subcommand
@@ -460,7 +460,7 @@ def main(args: List[str] = None) -> int:
                 num_records=parsed.records,
                 corrupt_mode=parsed.corrupt_mode if parsed.corrupt_mode != "none" else None,
             )
-        elif parsed.engine == "mysql":
+        elif parsed.engine in ("mysql", "mariadb"):
             res = gen.generate_mysql_sql(
                 output_path=parsed.out,
                 num_records=parsed.records,
