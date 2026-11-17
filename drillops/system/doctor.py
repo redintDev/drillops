@@ -207,7 +207,61 @@ class SystemDoctor:
                 )
             )
 
-        # 6. Output / Certificate directory write permissions
+        # 6. MySQL / MariaDB local service reachability
+        mysql_reachable = False
+        try:
+            import socket
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(0.5)
+            result = sock.connect_ex(("127.0.0.1", 3306))
+            sock.close()
+            if result == 0:
+                mysql_reachable = True
+        except Exception:
+            pass
+
+        if mysql_reachable:
+            checks.append(
+                DiagnosticCheck(
+                    category="Database",
+                    name="MySQL / MariaDB Service",
+                    status="PASS",
+                    message="Local MySQL/MariaDB port 3306 reachable",
+                )
+            )
+        else:
+            socket_active = False
+            for sock_path in (
+                "/var/run/mysqld/mysqld.sock",
+                "/run/mysqld/mysqld.sock",
+                "/tmp/mysql.sock",
+            ):
+                if os.path.exists(sock_path):
+                    socket_active = True
+                    break
+
+            if socket_active:
+                checks.append(
+                    DiagnosticCheck(
+                        category="Database",
+                        name="MySQL / MariaDB Service",
+                        status="PASS",
+                        message=f"Local MySQL/MariaDB Unix socket active ({sock_path})",
+                    )
+                )
+            else:
+                checks.append(
+                    DiagnosticCheck(
+                        category="Database",
+                        name="MySQL / MariaDB Service",
+                        status="WARN",
+                        message="Local MySQL/MariaDB service not responding on 3306",
+                        details="Acceptable if verifying remote database, PostgreSQL, or SQLite backups",
+                    )
+                )
+
+        # 7. Output / Certificate directory write permissions
         try:
             test_dir = os.path.abspath(self.cert_dir)
             os.makedirs(test_dir, exist_ok=True)
@@ -233,7 +287,7 @@ class SystemDoctor:
                 )
             )
 
-        # 7. Compression & Decryption Utilities
+        # 8. Compression & Decryption Utilities
         sec_tools = [tool for tool in ("gzip", "openssl", "gpg") if shutil.which(tool)]
         if "gzip" in sec_tools:
             checks.append(
@@ -256,7 +310,7 @@ class SystemDoctor:
                 )
             )
 
-        # 8. Disk capacity
+        # 9. Disk capacity
         try:
             total, used, free = shutil.disk_usage(os.path.abspath(self.cert_dir))
             free_gb = round(free / (1024**3), 2)
@@ -288,7 +342,7 @@ class SystemDoctor:
                 )
             )
 
-        # 9. License Verification
+        # 10. License Verification
         is_valid, lic_info, err = LicenseValidator().validate_key()
         if is_valid and lic_info:
             tier_name = lic_info.tier.value.upper()
