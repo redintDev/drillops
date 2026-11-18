@@ -1,0 +1,119 @@
+name: "SafeMigrate Database Migration Lock Linter"
+description: "Statically audits database migrations for lock queuing, full table rewrites, and downtime hazards in CI/CD pull requests."
+author: "SafeMigrate"
+branding:
+  icon: "database"
+  color: "blue"
+
+inputs:
+  path:
+    description: "Path to migration file or directory to scan"
+    required: false
+    default: "migrations"
+  dialect:
+    description: "SQL database dialect ('postgresql' or 'mysql')"
+    required: false
+    default: "postgresql"
+  strict:
+    description: "Fail the workflow on MEDIUM severity warnings in addition to CRITICAL/HIGH"
+    required: false
+    default: "false"
+  publish-summary:
+    description: "Publish markdown audit results directly to GitHub Step Summary"
+    required: false
+    default: "true"
+  suggest-fixes:
+    description: "Generate and publish unified diff of automated zero-downtime SQL rewrites to GitHub Step Summary"
+    required: false
+    default: "true"
+
+outputs:
+  lint-status:
+    description: "Overall lint status (PASSED or FAILED)"
+    value: ${{ steps.run-linter.outputs.lint_status }}
+  critical-hazards:
+    description: "Count of CRITICAL database lock hazards"
+    value: ${{ steps.run-linter.outputs.critical_hazards }}
+  high-hazards:
+    description: "Count of HIGH database lock hazards"
+    value: ${{ steps.run-linter.outputs.high_hazards }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install SafeMigrate
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install "${{ github.action_path }}"
+
+    - name: Execute SafeMigrate Lint
+      id: run-linter
+      shell: bash
+      run: |
+        STRICT_FLAG=""
+        if [ "${{ inputs.strict }}" = "true" ]; then
+          STRICT_FLAG="--strict"
+        fi
+
+        TARGET_PATH="${{ inputs.path }}"
+        CMD_SUB="check"
+        if [ -f "$TARGET_PATH" ]; then
+          CMD_SUB="lint"
+        fi
+
+        # First run in json mode to capture structured outputs
+        JSON_OUT=$(safemigrate $CMD_SUB "$TARGET_PATH" --dialect "${{ inputs.dialect }}" --format json $STRICT_FLAG || true)
+        
+        # Calculate stats safely via environment variable (avoiding shell string interpolation)
+        export SAFEMIGRATE_JSON_DATA="$JSON_OUT"
+        CRIT=$(python -c "import json, os; data = json.loads(os.environ.get('SAFEMIGRATE_JSON_DATA', '[]')); print(sum(x.get('critical', 0) for x in data))" 2>/dev/null || echo "0")
+        HIGH=$(python -c "import json, os; data = json.loads(os.environ.get('SAFEMIGRATE_JSON_DATA', '[]')); print(sum(x.get('high', 0) for x in data))" 2>/dev/null || echo "0")
+        PASSED=$(python -c "import json, os; data = json.loads(os.environ.get('SAFEMIGRATE_JSON_DATA', '[]')); print('PASSED' if all(x.get('passed', False) for x in data) else 'FAILED')" 2>/dev/null || echo "FAILED")
+        unset SAFEMIGRATE_JSON_DATA
+
+        echo "critical_hazards=$CRIT" >> $GITHUB_OUTPUT
+        echo "high_hazards=$HIGH" >> $GITHUB_OUTPUT
+        echo "lint_status=$PASSED" >> $GITHUB_OUTPUT
+
+        # Now run in github format for annotations and step summary
+        SUMMARY_OUT=$(safemigrate $CMD_SUB "$TARGET_PATH" --dialect "${{ inputs.dialect }}" --format github $STRICT_FLAG || true)
+        
+        # Emit annotations to workflow stdout
+        echo "$SUMMARY_OUT"
+
+        if [ "${{ inputs.publish-summary }}" = "true" ] && [ -n "$GITHUB_STEP_SUMMARY" ]; then
+          echo "$SUMMARY_OUT" | grep -v "^::" >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+        # Generate safe remediation diff if requested and hazards were found
+        if [ "${{ inputs.suggest-fixes }}" = "true" ] && [ "$PASSED" = "FAILED" ]; then
+          DIFF_OUT=$(safemigrate fix "$TARGET_PATH" --dialect "${{ inputs.dialect }}" --diff || true)
+          if [ -n "$DIFF_OUT" ]; then
+            echo ""
+            echo "::group::⚡ SafeMigrate Recommended Zero-Downtime Diff"
+            echo "$DIFF_OUT"
+            echo "::endgroup::"
+            if [ "${{ inputs.publish-summary }}" = "true" ] && [ -n "$GITHUB_STEP_SUMMARY" ]; then
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo "### ⚡ SafeMigrate Recommended Zero-Downtime Diff" >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo '```diff' >> "$GITHUB_STEP_SUMMARY"
+              echo "$DIFF_OUT" >> "$GITHUB_STEP_SUMMARY"
+              echo '```' >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo "*Run \`safemigrate fix -i ${{ inputs.path }}\` locally to apply these safe rewrites automatically.*" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+        fi
+
+        # Exit with failure if linter detected blocking hazards
+        if [ "$PASSED" = "FAILED" ]; then
+          echo "SafeMigrate: Dangerous database lock hazards detected! Blocking pull request."
+          exit 1
+        fi

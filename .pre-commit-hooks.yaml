@@ -1,0 +1,35 @@
+- id: drillops-verify
+  name: DrillOps Database Restore Verifier
+  description: Verify database backups and generate disaster recovery evidence
+  entry: drillops verify
+  language: python
+  types: [file]
+
+- id: safemigrate
+  name: SafeMigrate Database Lock Linter
+  description: Audit SQL migrations for database lock hazards and downtime risks before commit
+  entry: safemigrate lint
+  language: python
+  additional_dependencies: ["git+https://github.com/redintDev/drillops.git#subdirectory=safemigrate"]
+  types: [file]
+  files: \.(sql|psql)$
+
+- id: safemigrate-fix
+  name: SafeMigrate DDL Auto-Fixer
+  description: Automatically rewrite hazardous SQL migrations into zero-downtime DDL in-place before commit
+  entry: safemigrate fix -i
+  language: python
+  pass_filenames: true
+  additional_dependencies: ["git+https://github.com/redintDev/drillops.git#subdirectory=safemigrate"]
+  types: [file]
+  files: \.(sql|psql)$
+
+- id: safemigrate-check
+  name: SafeMigrate Dry-Run Checker
+  description: Verify SQL migrations conform to zero-downtime rules without modifying files (fails if fixes needed)
+  entry: safemigrate fix --check
+  language: python
+  pass_filenames: true
+  additional_dependencies: ["git+https://github.com/redintDev/drillops.git#subdirectory=safemigrate"]
+  types: [file]
+  files: \.(sql|psql)$

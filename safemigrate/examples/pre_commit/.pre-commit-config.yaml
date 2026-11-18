@@ -1,0 +1,19 @@
+# SafeMigrate pre-commit configuration example
+# Drop into your repository root as .pre-commit-config.yaml
+# Learn more: https://redintdev.github.io/drillops/safemigrate/
+
+repos:
+  - repo: https://github.com/redintDev/drillops
+    rev: main
+    hooks:
+      # Option 1: Auto-Fix staged migrations in-place on git commit
+      - id: safemigrate-fix
+        # args: ["--dialect", "postgresql"]
+
+      # Option 2: Dry-run check (fails commit if migrations require safe remediation)
+      # - id: safemigrate-check
+      #   args: ["--diff"]
+
+      # Option 3: Lint-only (reports violations with severity indicators)
+      # - id: safemigrate
+      #   args: ["--strict"]
