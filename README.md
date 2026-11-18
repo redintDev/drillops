@@ -335,6 +335,7 @@ drillops check-binlog --binlog-dir /var/log/mysql/binlogs --json
 - 📖 **[MySQL & MariaDB Disaster Recovery Runbook & Automated Verification Guide](docs/MYSQL_DR_RUNBOOK.md)**: A complete technical guide for MySQL & MariaDB DBAs and SREs on automating ephemeral restore drills, continuous binary log (binlog) auditing, measuring sub-second RTO, and compiling SOC 2 CC9.1 / ISO 27001 auditor evidence.
 - 📖 **[SQLite & Embedded Database Disaster Recovery Runbook & Automated Verification Guide](docs/SQLITE_DR_RUNBOOK.md)**: A complete technical guide for Systems Engineers, Edge Developers, and SREs on avoiding WAL "torn copy" traps, continuous Litestream/LiteFS verification, sub-second RTO benchmarking, and compiling SOC 2 CC9.1 / ISO 27001 auditor evidence.
 - 📖 **[Continuous Disaster Recovery Verification in CI/CD Pipelines](docs/CICD_INTEGRATION_GUIDE.md)**: Ready-to-use production recipes for automating scheduled backup restoration drills in GitHub Actions, GitLab CI/CD, Bitbucket Pipelines, CircleCI, and Kubernetes CronJobs.
+- 📖 **[Zero-Downtime Database Migration Guide](docs/ZERO_DOWNTIME_MIGRATION_GUIDE.md)**: A complete technical guide on PostgreSQL & MySQL lock modes, lock queue starvation, Online DDL algorithms, and 6 universal zero-downtime migration patterns.
 - 📖 **[SOC 2 Type II & ISO 27001 Disaster Recovery Audit Evidence Dossier Guide](docs/SOC2_AUDIT_GUIDE.md)**: A complete technical handbook for Compliance Officers, SREs, and Auditors on evaluating disaster recovery evidence dossiers, cryptographic provenance, and mapping controls directly to Vanta, Drata, and Secureframe.
 
 ---
@@ -398,12 +399,17 @@ See [`docs/COMMERCIAL_PRICING.md`](docs/COMMERCIAL_PRICING.md) for full pricing 
 
 ## 🧪 Testing
 
-Run all 196 unit and integration tests:
+The Database Reliability Suite features **262 automated unit and integration tests** (100% pass rate):
 ```bash
 source .venv/bin/activate
+
+# 1. Run DrillOps DR drill & compliance verification test suite (196 tests in ~32s)
 pytest tests/
+
+# 2. Run SafeMigrate DDL lock linter & AST rewrite test suite (66 tests in ~0.5s)
+pytest safemigrate/tests/  # or projects/safemigrate/tests/
 ```
-All 196 tests pass in ~30 seconds.
+All 262 tests pass continuously in ~33 seconds across 36 test modules.
 
 ---
 
@@ -414,6 +420,8 @@ DrillOps and SafeMigrate provide complete end-to-end reliability for production 
 1. **[SafeMigrate](https://redintdev.github.io/drillops/safemigrate/)** (`Pre-Deployment`): Static migration lock linter and automated zero-downtime DDL rewriter. Blocks `AccessExclusiveLock` queue starvation, unsafe foreign keys, metadata lock spikes, and table rewrites in CI/CD pull requests before deployment.
    - 🌐 **[Launch SafeMigrate Live Simulator in Browser](https://redintdev.github.io/drillops/safemigrate/)** (instant AST analysis & 1-click auto-fixing)
    - 📖 **[Zero-Downtime Database Migration Guide](docs/ZERO_DOWNTIME_MIGRATION_GUIDE.md)** (Postgres & MySQL lock matrix & safe patterns)
+   - 🚀 **[Full-Lifecycle CI/CD Pipeline Guide](docs/CICD_INTEGRATION_GUIDE.md#7-full-lifecycle-database-reliability-safemigrate-pr-gate--drillops-nightly-dr)** (Turnkey dual-action GitHub workflow)
+   - 💡 **[Request a Migration Rule or Lock Analysis](https://github.com/redintDev/drillops/issues/new?template=migration_rule_request.md)** (propose unsafe DDL patterns or framework rules)
    - ⚡ **1-Line Turnkey Installer**:
      ```bash
      curl -sSL https://raw.githubusercontent.com/redintDev/drillops/main/safemigrate/install.sh | bash
@@ -442,4 +450,5 @@ DrillOps and SafeMigrate provide complete end-to-end reliability for production 
      ```
 
 2. **DrillOps** (`Post-Deployment`): Automated ephemeral disaster recovery restore drills, RTO/RPO SLA verification, and SOC 2 CC9.1 compliance dossiers.
+
 
