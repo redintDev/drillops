@@ -1,0 +1,27 @@
+name: "SafeMigrate PR Check"
+
+on:
+  pull_request:
+    paths:
+      - "migrations/**"
+      - "db/migrations/**"
+      - "sql/**"
+  push:
+    branches:
+      - main
+
+jobs:
+  lint-migrations:
+    name: "Audit Database Migrations for Locks"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run SafeMigrate Action
+        uses: redintDev/drillops/safemigrate@main
+        with:
+          path: "migrations"
+          dialect: "postgresql"
+          strict: "false"
+          publish-summary: "true"

@@ -411,7 +411,35 @@ All 196 tests pass in ~30 seconds.
 
 DrillOps and SafeMigrate provide complete end-to-end reliability for production databases:
 
-1. **[SafeMigrate](https://redintdev.github.io/drillops/safemigrate/)** (`Pre-Deployment`): Static migration lock linter and automated DDL rewriter. Blocks `AccessExclusiveLock` queue starvation, unsafe foreign keys, and table rewrites in CI/CD pull requests before deployment.
-   - 🌐 **[Launch SafeMigrate Live Simulator in Browser](https://redintdev.github.io/drillops/safemigrate/)**
+1. **[SafeMigrate](https://redintdev.github.io/drillops/safemigrate/)** (`Pre-Deployment`): Static migration lock linter and automated zero-downtime DDL rewriter. Blocks `AccessExclusiveLock` queue starvation, unsafe foreign keys, metadata lock spikes, and table rewrites in CI/CD pull requests before deployment.
+   - 🌐 **[Launch SafeMigrate Live Simulator in Browser](https://redintdev.github.io/drillops/safemigrate/)** (instant AST analysis & 1-click auto-fixing)
+   - 📖 **[Zero-Downtime Database Migration Guide](docs/ZERO_DOWNTIME_MIGRATION_GUIDE.md)** (Postgres & MySQL lock matrix & safe patterns)
+   - ⚡ **1-Line Turnkey Installer**:
+     ```bash
+     curl -sSL https://raw.githubusercontent.com/redintDev/drillops/main/safemigrate/install.sh | bash
+     ```
+   - 📦 **Pip Install**:
+     ```bash
+     pip install "git+https://github.com/redintDev/drillops.git#subdirectory=safemigrate"
+     ```
+   - 🛡️ **Turnkey GitHub Action for Pull Requests**:
+     ```yaml
+     - name: Lint Database Migrations for Lock Contention
+       uses: redintDev/drillops/safemigrate@main
+       with:
+         path: "migrations"
+         dialect: "postgresql" # or "mysql"
+         suggest-fixes: "true"
+     ```
+   - 🪝 **Git Pre-Commit Hook**:
+     ```yaml
+     repos:
+       - repo: https://github.com/redintDev/drillops
+         rev: main
+         hooks:
+           - id: safemigrate-fix   # automatically rewrites dangerous migrations in-place
+           - id: safemigrate-check # fails commit if migrations require safe remediation
+     ```
+
 2. **DrillOps** (`Post-Deployment`): Automated ephemeral disaster recovery restore drills, RTO/RPO SLA verification, and SOC 2 CC9.1 compliance dossiers.
 
