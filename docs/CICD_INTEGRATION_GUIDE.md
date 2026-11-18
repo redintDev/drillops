@@ -316,7 +316,101 @@ spec:
 
 ---
 
-## 7. How to Present CI/CD Output to SOC 2 Auditors
+## 7. Full-Lifecycle Database Reliability: SafeMigrate (PR Gate) + DrillOps (Nightly DR)
+
+Modern high-velocity engineering organizations prevent database outages and data loss by verifying database changes across two critical phases of the software delivery lifecycle:
+
+```
+┌────────────────────────────────────────────────────────┐
+│ Phase 1: Pre-Deployment Pull Request Gate (SafeMigrate)│
+│ • Runs on every PR modifying database migrations       │
+│ • Statically lints DDL for table lock hazards          │
+│ • Blocks AccessExclusiveLock & metadata lock queues    │
+│ • Suggests automated zero-downtime SQL rewrites        │
+└───────────────────────────┬────────────────────────────┘
+                            │
+                            ▼ (Merge to Main & Deploy)
+┌────────────────────────────────────────────────────────┐
+│ Phase 2: Post-Deployment DR Verification (DrillOps)    │
+│ • Runs nightly on scheduled cron in ephemeral runner   │
+│ • Restores actual production backup into sandbox       │
+│ • Verifies schema drift, row integrity & RTO/RPO SLAs   │
+│ • Compiles SOC 2 CC9.1 / ISO 27001 auditor dossiers    │
+└────────────────────────────────────────────────────────┘
+```
+
+### Turnkey Dual-Action GitHub Workflow
+
+Here is how high-scale engineering teams implement both gates in a single unified GitHub Actions workflow architecture:
+
+```yaml
+# .github/workflows/database-reliability.yml
+name: Database Reliability Pipeline
+
+on:
+  pull_request:
+    paths:
+      - 'migrations/**'
+      - 'db/**'
+      - 'alembic/**'
+  schedule:
+    - cron: '0 2 * * *'  # Nightly DR drill at 02:00 UTC
+  workflow_dispatch:
+
+jobs:
+  # ---------------------------------------------------------
+  # Phase 1: Pre-Deployment Migration Lock Linter (PRs Only)
+  # ---------------------------------------------------------
+  safemigrate-lint:
+    name: Lint Migrations for Table Locks
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Audit Migration Lock Safety
+        uses: redintDev/drillops/safemigrate@main
+        with:
+          path: "migrations"
+          dialect: "postgresql"
+          suggest-fixes: "true"
+
+  # ---------------------------------------------------------
+  # Phase 2: Post-Deployment Nightly DR Drill (Schedule/Manual)
+  # ---------------------------------------------------------
+  drillops-restore:
+    name: Verify Database Backup & SLA
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Ephemeral DR Drill & Evidence Packaging
+        uses: redintDev/drillops@v0.2.2
+        with:
+          backup-path: "s3://prod-backups/nightly.sql.gz"
+          database-type: "postgres"
+          target-tables: "users,organizations,transactions"
+          max-rto-seconds: "300"
+          s3-endpoint: ${{ secrets.S3_ENDPOINT }}
+          s3-access-key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          s3-secret-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          license-key: ${{ secrets.DRILLOPS_LICENSE_KEY }}
+          generate-dossier: "true"
+
+      - name: Archive SOC 2 Evidence Dossier
+        uses: actions/upload-artifact@v4
+        with:
+          name: soc2-cc9.1-audit-dossier
+          path: /tmp/drillops_out/soc2_audit_pack.zip
+          retention-days: 365
+```
+
+---
+
+## 8. How to Present CI/CD Output to SOC 2 Auditors
 
 When audit season arrives:
 1. **Direct Pipeline Link**: Provide your auditor read-only access to your GitHub/GitLab scheduled CI run history. Every run displays:
@@ -329,7 +423,7 @@ When audit season arrives:
 
 ---
 
-## 8. Commercial Licensing in CI/CD Environments
+## 9. Commercial Licensing in CI/CD Environments
 
 DrillOps features an **offline-first, zero-DRM architecture**. In CI/CD runners:
 - No telephone-home network calls.
@@ -338,5 +432,7 @@ DrillOps features an **offline-first, zero-DRM architecture**. In CI/CD runners:
 
 To acquire a Pro ($79/yr) or Enterprise ($199/yr) license token:
 - **Web Portal & Trial Token**: [https://redintdev.github.io/drillops/](https://redintdev.github.io/drillops/)
+- **SafeMigrate Live Simulator**: [https://redintdev.github.io/drillops/safemigrate/](https://redintdev.github.io/drillops/safemigrate/)
 - **Commercial Pricing**: [https://github.com/redintDev/drillops/blob/main/docs/COMMERCIAL_PRICING.md](https://github.com/redintDev/drillops/blob/main/docs/COMMERCIAL_PRICING.md)
 - **Direct Order Inquiries**: Email [`abdellatifaamrani4@gmail.com`](mailto:abdellatifaamrani4@gmail.com)
+
