@@ -6,6 +6,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://github.com/redintDev/drillops)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![llms.txt](https://img.shields.io/badge/llms.txt-standard-blueviolet)](https://redintdev.github.io/drillops/llms.txt)
+[![SafeMigrate](https://img.shields.io/badge/SafeMigrate-Live%20Linter-blueviolet)](https://redintdev.github.io/drillops/safemigrate/)
 
 > *"An untested backup is not a backup—it is merely a wish."*
 
@@ -403,4 +404,14 @@ source .venv/bin/activate
 pytest tests/
 ```
 All 196 tests pass in ~30 seconds.
+
+---
+
+## 🤝 Synergistic Ecosystem: The Database Reliability Suite
+
+DrillOps and SafeMigrate provide complete end-to-end reliability for production databases:
+
+1. **[SafeMigrate](https://redintdev.github.io/drillops/safemigrate/)** (`Pre-Deployment`): Static migration lock linter and automated DDL rewriter. Blocks `AccessExclusiveLock` queue starvation, unsafe foreign keys, and table rewrites in CI/CD pull requests before deployment.
+   - 🌐 **[Launch SafeMigrate Live Simulator in Browser](https://redintdev.github.io/drillops/safemigrate/)**
+2. **DrillOps** (`Post-Deployment`): Automated ephemeral disaster recovery restore drills, RTO/RPO SLA verification, and SOC 2 CC9.1 compliance dossiers.
 
