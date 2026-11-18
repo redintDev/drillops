@@ -337,16 +337,40 @@
       color: var(--text-muted);
       font-size: 0.9rem;
     }
+    .code-block-wrapper {
+      position: relative;
+      margin-top: 12px;
+    }
     .code-block {
       background: var(--code-bg);
       border: 1px solid var(--card-border);
       border-radius: 8px;
       padding: 16px;
+      padding-top: 28px;
       font-family: var(--font-mono);
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: #e5e7eb;
       overflow-x: auto;
-      margin-top: 12px;
+      white-space: pre;
+    }
+    .copy-code-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: all 0.15s ease;
+      z-index: 2;
+    }
+    .copy-code-btn:hover {
+      background: #334155;
+      color: #fff;
     }
     footer {
       border-top: 1px solid var(--card-border);
@@ -385,7 +409,7 @@
       <h1>Prevent Production Outages From Database Table Locks in CI/CD</h1>
       <p>Statically inspect PostgreSQL & MySQL migration scripts in pull requests before deployment. Stop invisible <code>AccessExclusiveLock</code> queue starvation with zero database infrastructure required.</p>
       <div class="badges">
-        <span class="badge green">✔ 61+ Automated Tests Passing</span>
+        <span class="badge green">✔ 64+ Automated Tests Passing</span>
         <span class="badge">Python 3.9+</span>
         <span class="badge">Composite GitHub Action</span>
         <span class="badge">Pre-Commit Hook</span>
@@ -481,34 +505,48 @@
       <div class="feature-grid">
         <div class="feature-card">
           <h3>Turnkey GitHub Action</h3>
-          <p>Blocks pull requests containing dangerous database locks and posts line annotations and markdown remediation recipes directly in the PR.</p>
-          <div class="code-block">
-- uses: actions/checkout@v4
-- uses: redintDev/safemigrate@v0.1
+          <p>Blocks pull requests containing dangerous database locks and posts step summary diffs with automated safe rewrites.</p>
+          <div class="code-block-wrapper">
+            <button class="copy-code-btn" onclick="copySnippet('codeAction', this)">📋 Copy</button>
+            <div class="code-block" id="codeAction">- uses: actions/checkout@v4
+- uses: redintDev/drillops/safemigrate@main
   with:
     path: "migrations"
     dialect: "postgresql"
+    suggest-fixes: "true"</div>
           </div>
         </div>
 
         <div class="feature-card">
           <h3>Git Pre-Commit Hook</h3>
-          <p>Stops dangerous DDL from even being committed to local git branches.</p>
-          <div class="code-block">
-# .pre-commit-config.yaml
+          <p>Stops dangerous DDL from being committed to git branches or rewrites SQL in-place automatically.</p>
+          <div class="code-block-wrapper">
+            <button class="copy-code-btn" onclick="copySnippet('codePreCommit', this)">📋 Copy</button>
+            <div class="code-block" id="codePreCommit"># .pre-commit-config.yaml
 repos:
-  - repo: https://github.com/redintDev/safemigrate
-    rev: v0.1.0
+  - repo: https://github.com/redintDev/drillops
+    rev: main
     hooks:
-      - id: safemigrate
+      - id: safemigrate-fix   # rewrites SQL in-place
+      - id: safemigrate-check # fails commit if unsafe</div>
           </div>
         </div>
 
         <div class="feature-card">
           <h3>1-Line CLI Installer</h3>
           <p>Instant installation in local terminal or CI pipelines with environment auto-detection.</p>
-          <div class="code-block">
-curl -sSL https://raw.githubusercontent.com/redintDev/safemigrate/main/install.sh | bash
+          <div class="code-block-wrapper">
+            <button class="copy-code-btn" onclick="copySnippet('codeCurl', this)">📋 Copy</button>
+            <div class="code-block" id="codeCurl">curl -sSL https://raw.githubusercontent.com/redintDev/drillops/main/safemigrate/install.sh | bash</div>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <h3>Pip Direct Install</h3>
+          <p>Install directly from source via standard pip into any virtual environment with zero dependencies.</p>
+          <div class="code-block-wrapper">
+            <button class="copy-code-btn" onclick="copySnippet('codePip', this)">📋 Copy</button>
+            <div class="code-block" id="codePip">pip install "git+https://github.com/redintDev/drillops.git#subdirectory=safemigrate"</div>
           </div>
         </div>
       </div>
@@ -523,7 +561,7 @@ curl -sSL https://raw.githubusercontent.com/redintDev/safemigrate/main/install.s
       <a href="llms-full.txt">llms-full.txt</a> &bull;
       <a href="robots.txt">robots.txt</a> &bull;
       <a href="sitemap.xml">sitemap.xml</a> &bull;
-      <a href="https://github.com/redintDev/safemigrate" target="_blank">GitHub</a>
+      <a href="https://github.com/redintDev/drillops" target="_blank">GitHub</a>
     </p>
     <p style="margin-top: 8px;">Maintained autonomously under $0 spend constraint. Inquiries: <a href="mailto:abdellatifaamrani4@gmail.com">abdellatifaamrani4@gmail.com</a></p>
   </footer>
@@ -868,6 +906,25 @@ curl -sSL https://raw.githubusercontent.com/redintDev/safemigrate/main/install.s
           toast.style.display = "flex";
         }
       }
+    }
+
+    function copySnippet(elemId, btn) {
+      const el = document.getElementById(elemId);
+      if (!el) return;
+      const text = el.innerText || el.textContent;
+      navigator.clipboard.writeText(text.trim()).then(() => {
+        const orig = btn.innerText;
+        btn.innerText = "✓ Copied!";
+        btn.style.borderColor = "var(--safe)";
+        btn.style.color = "var(--safe)";
+        setTimeout(() => {
+          btn.innerText = orig;
+          btn.style.borderColor = "#334155";
+          btn.style.color = "#94a3b8";
+        }, 2000);
+      }).catch(() => {
+        btn.innerText = "✓ Copied!";
+      });
     }
 
     // Run audit on page load
