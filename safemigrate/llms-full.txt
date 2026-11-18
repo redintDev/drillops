@@ -1,0 +1,358 @@
+# SafeMigrate Comprehensive Machine Reference & Developer Manual
+
+> Complete LLM reference manual for SafeMigrate: Zero-Downtime Database Migration Linter.
+> Covers database lock modes, AST detection algorithms, rule taxonomies, remediation strategies, CLI specifications, JSON schemas, and CI/CD pipelines.
+
+---
+
+## 1. Executive Summary & Purpose
+
+Database schema migrations are among the highest-risk operations in modern web software engineering. While modern ORM frameworks (e.g., Django, Ruby on Rails ActiveRecord, Alembic / SQLAlchemy, Prisma, TypeORM, Hibernate) make authoring migrations effortless, the generated DDL statements often fail to account for operational constraints of production databases under high concurrency.
+
+Under real production workloads:
+1. `ALTER TABLE` operations request exclusive lock modes (`AccessExclusiveLock` in PostgreSQL, metadata locks in MySQL).
+2. Even when the migration itself is physically instantaneous, any preceding slow read query holds a shared lock (`AccessShareLock`).
+3. The migration enters the database lock wait queue.
+4. Because database lock queues are strictly FIFO (First-In, First-Out), **all subsequent incoming queries are blocked behind the waiting migration**.
+5. The application's connection pool saturates within seconds, leading to HTTP 504 Gateway Timeouts, 500 Internal Server Errors, and total platform downtime.
+
+**SafeMigrate** eliminates this risk by statically analyzing migration SQL scripts prior to deployment, flagging hazardous DDL patterns, and emitting copy-paste zero-downtime multi-step SQL recipes directly into developer workflows (CLI, Git pre-commit, and GitHub pull request annotations).
+
+---
+
+## 2. PostgreSQL Locking Mechanism & Concurrency Model
+
+Understanding PostgreSQL lock conflict matrices is essential for safe migration engineering:
+
+### Lock Modes Matrix
+| Lock Mode | Conflicts With | Acquired By |
+| :--- | :--- | :--- |
+| **`AccessShareLock`** | `AccessExclusiveLock` | `SELECT` |
+| **`RowShareLock`** | `ExclusiveLock`, `AccessExclusiveLock` | `SELECT ... FOR UPDATE / FOR SHARE` |
+| **`RowExclusiveLock`** | `ShareLock`, `ShareRowExclusiveLock`, `ExclusiveLock`, `AccessExclusiveLock` | `INSERT`, `UPDATE`, `DELETE` |
+| **`ShareUpdateExclusiveLock`** | `ShareUpdateExclusiveLock`, `ShareLock`, `ShareRowExclusiveLock`, `ExclusiveLock`, `AccessExclusiveLock` | `VACUUM (regular)`, `ANALYZE`, `CREATE INDEX CONCURRENTLY` |
+| **`ShareLock`** | `RowExclusiveLock`, `ShareUpdateExclusiveLock`, `ShareRowExclusiveLock`, `ExclusiveLock`, `AccessExclusiveLock` | `CREATE INDEX` (non-concurrent) |
+| **`ShareRowExclusiveLock`** | `RowExclusiveLock`, `ShareUpdateExclusiveLock`, `ShareLock`, `ShareRowExclusiveLock`, `ExclusiveLock`, `AccessExclusiveLock` | `CREATE TRIGGER`, `ADD CONSTRAINT FOREIGN KEY` |
+| **`ExclusiveLock`** | `RowShareLock`, `RowExclusiveLock`, `ShareUpdateExclusiveLock`, `ShareLock`, `ShareRowExclusiveLock`, `ExclusiveLock`, `AccessExclusiveLock` | `REFRESH MATERIALIZED VIEW` |
+| **`AccessExclusiveLock`** | **ALL MODES** (`AccessShareLock` through `AccessExclusiveLock`) | `ALTER TABLE`, `DROP TABLE`, `TRUNCATE`, `REINDEX` |
+
+### The Lock Queuing Catastrophe
+```
+Timeline:
+T0: Client A executes long-running SELECT query.
+    --> Holds AccessShareLock on table 'users'.
+T1: Migration script executes 'ALTER TABLE users ADD COLUMN age INT DEFAULT 0;'
+    --> Requests AccessExclusiveLock on 'users'.
+    --> Blocked by Client A. Placed in Lock Wait Queue.
+T2: Client B executes fast SELECT query (1ms).
+    --> Blocked behind Migration in Queue!
+T3: Client C executes fast INSERT query (2ms).
+    --> Blocked behind Migration in Queue!
+T4: 50+ clients arrive every second.
+    --> All blocked. Connection pool hits max_connections (e.g. 100).
+T5: New connections rejected. Platform Outage.
+```
+
+### The Three Universal Rules of Zero-Downtime DDL
+1. **Always set a tight lock timeout**: `SET LOCAL lock_timeout = '2s';` so that if an exclusive lock cannot be acquired within 2 seconds, the migration fails safely and rolls back without queuing other queries.
+2. **Never build indexes synchronously on production tables**: Always use `CREATE INDEX CONCURRENTLY`.
+3. **Decompose complex schema alterations into multi-phase deployments**: Split column rewrites, defaults, and foreign keys across separate deploy cycles (Deploy 1: schema addition; Deploy 2: backfill & dual-write; Deploy 3: constraint validation).
+
+---
+
+## 3. SafeMigrate Rule Taxonomy & Remediation Engine
+
+SafeMigrate implements an extensible AST rule engine. Each rule defines a unique identifier, severity level, locking impact description, and step-by-step remediation recipe.
+
+### Rule `SM-01`: Volatile Default Value in `ADD COLUMN`
+- **Severity**: `CRITICAL`
+- **Hazard**: In PostgreSQL versions prior to 11 (and in all versions when using volatile/non-constant functions such as `gen_random_uuid()`, `now()`, `clock_timestamp()`, or expressions evaluated per row), adding a column with a default value forces a physical rewrite of every table page on disk while holding an `AccessExclusiveLock`. On a table with 10M rows, this can hold the lock for several minutes.
+- **Trigger Pattern**: `ALTER TABLE <tbl> ADD COLUMN <col> <type> DEFAULT <volatile_expr>`
+- **Safe Zero-Downtime Remediation**:
+  ```sql
+  -- Step 1: Add the column as NULLable without a default (instant catalog-only update)
+  ALTER TABLE {table} ADD COLUMN {column} {type};
+
+  -- Step 2: Set the default for FUTURE inserts only (instant catalog update)
+  ALTER TABLE {table} ALTER COLUMN {column} SET DEFAULT {default};
+
+  -- Step 3: Backfill existing rows in small batches to avoid lock contention
+  -- In application code or background task:
+  -- UPDATE {table} SET {column} = {default} WHERE {column} IS NULL AND id BETWEEN ...;
+
+  -- Step 4: If required, add NOT NULL constraint as NOT VALID, then validate
+  ALTER TABLE {table} ADD CONSTRAINT {column}_not_null CHECK ({column} IS NOT NULL) NOT VALID;
+  ALTER TABLE {table} VALIDATE CONSTRAINT {column}_not_null;
+  ```
+
+---
+
+### Rule `SM-02`: Non-Concurrent Index Creation
+- **Severity**: `HIGH`
+- **Hazard**: `CREATE INDEX` without `CONCURRENTLY` acquires a `ShareLock`. This permits `SELECT` reads but completely blocks all write operations (`INSERT`, `UPDATE`, `DELETE`) for the entire duration of index generation. On large tables, building a B-Tree index can take 10 minutes to several hours.
+- **Trigger Pattern**: `CREATE [UNIQUE] INDEX [IF NOT EXISTS] <name> ON <tbl>` (missing `CONCURRENTLY`)
+- **Safe Zero-Downtime Remediation**:
+  ```sql
+  -- Run outside a transaction block (autocommit mode)
+  CREATE {unique}INDEX CONCURRENTLY {if_not_exists}{index_name} ON {table} ({columns});
+  ```
+
+---
+
+### Rule `SM-03`: Immediate Foreign Key Constraint Validation
+- **Severity**: `HIGH`
+- **Hazard**: Adding a foreign key constraint via `ALTER TABLE tbl ADD CONSTRAINT fk FOREIGN KEY (...) REFERENCES other(...)` acquires a `ShareRowExclusiveLock` on both the referencing and referenced tables. It scans the entire table sequentially to verify referential integrity before committing. Any concurrent writes to either table will be blocked.
+- **Trigger Pattern**: `ALTER TABLE <tbl> ADD CONSTRAINT <name> FOREIGN KEY (...) REFERENCES ...` (missing `NOT VALID`)
+- **Safe Zero-Downtime Remediation**:
+  ```sql
+  -- Step 1: Add the foreign key constraint without validating existing rows (instant)
+  ALTER TABLE {table} ADD CONSTRAINT {constraint_name} FOREIGN KEY ({column}) REFERENCES {ref_table}({ref_column}) NOT VALID;
+
+  -- Step 2: Validate the constraint in a separate transaction without blocking writes
+  ALTER TABLE {table} VALIDATE CONSTRAINT {constraint_name};
+  ```
+
+---
+
+### Rule `SM-04`: Column Data Type Alteration
+- **Severity**: `CRITICAL`
+- **Hazard**: `ALTER TABLE tbl ALTER COLUMN col TYPE new_type` almost always requires rewriting the table and all associated indexes under `AccessExclusiveLock`. Exceptions only exist for binary-compatible type conversions (e.g., `VARCHAR(50)` to `VARCHAR(100)` in PostgreSQL).
+- **Trigger Pattern**: `ALTER TABLE <tbl> ALTER [COLUMN] <col> TYPE <new_type>`
+- **Safe Zero-Downtime Remediation**:
+  ```sql
+  -- Step 1: Add a new column with the target data type
+  ALTER TABLE {table} ADD COLUMN {column}_new {new_type};
+
+  -- Step 2: Update application code to dual-write to both columns.
+
+  -- Step 3: Backfill historical rows from {column} to {column}_new in batches.
+
+  -- Step 4: Drop old column and rename new column (under tight lock_timeout)
+  SET LOCAL lock_timeout = '2s';
+  ALTER TABLE {table} DROP COLUMN {column};
+  ALTER TABLE {table} RENAME COLUMN {column}_new TO {column};
+  ```
+
+---
+
+### Rule `SM-05`: Column Drop Without Lock Timeout
+- **Severity**: `MEDIUM`
+- **Hazard**: `DROP COLUMN` requires an `AccessExclusiveLock`. While the drop operation itself is fast (metadata update), if any long query is running, the `DROP COLUMN` will enter the queue and block all subsequent traffic unless protected by a lock timeout.
+- **Trigger Pattern**: `ALTER TABLE <tbl> DROP COLUMN <col>` in a file lacking `lock_timeout`
+- **Safe Zero-Downtime Remediation**:
+  ```sql
+  -- Wrap the drop statement with a tight lock_timeout
+  SET LOCAL lock_timeout = '2s';
+  ALTER TABLE {table} DROP COLUMN {column};
+  ```
+
+---
+
+### Rule `SM-06`: Missing Lock Timeout in DDL Script
+- **Severity**: `LOW`
+- **Hazard**: Any DDL migration script executed in production without an explicit `lock_timeout` risks waiting indefinitely for locks, causing lock queue pileups and cascading connection exhaustion.
+- **Trigger Pattern**: Any SQL file containing `ALTER TABLE`, `CREATE TABLE`, `DROP TABLE`, or `CREATE INDEX` that does not configure `lock_timeout`.
+- **Safe Zero-Downtime Remediation**:
+  ```sql
+  -- Add at the very beginning of the migration file:
+  SET LOCAL lock_timeout = '2s';
+  SET LOCAL statement_timeout = '10s';
+  ```
+
+---
+
+## 4. CLI Specifications & Options
+
+### Commands
+```
+safemigrate [OPTIONS] COMMAND [ARGS]...
+
+Commands:
+  lint    Lint one or more specific SQL migration files.
+  check   Recursively scan a directory of SQL migration files.
+```
+
+### Command: `safemigrate lint`
+```
+Usage: safemigrate lint [OPTIONS] [FILES]...
+
+Arguments:
+  FILES...                One or more paths to SQL migration files.
+
+Options:
+  --dialect [postgresql|mysql]  Database SQL dialect (default: postgresql).
+  --format [terminal|github|json] Output presentation format (default: terminal).
+  --max-severity [CRITICAL|HIGH|MEDIUM|LOW] Exit code 1 if violations meet or exceed this severity.
+  --help                  Show this message and exit.
+```
+
+### Command: `safemigrate check`
+```
+Usage: safemigrate check [OPTIONS] DIRECTORY
+
+Arguments:
+  DIRECTORY               Directory containing SQL migration scripts.
+
+Options:
+  --dialect [postgresql|mysql]  Database SQL dialect (default: postgresql).
+  --format [terminal|github|json] Output presentation format (default: terminal).
+  --recursive / --no-recursive  Search subdirectories (default: True).
+  --max-severity [CRITICAL|HIGH|MEDIUM|LOW] Exit code 1 threshold.
+  --help                  Show this message and exit.
+```
+
+### Exit Codes
+- `0`: Success. All files inspected; no violations detected exceeding `--max-severity`.
+- `1`: Safety Violation Detected. Hazardous DDL detected that violates safety rules.
+- `2`: Command Error. Invalid arguments, missing files, or unparseable syntax.
+
+---
+
+## 5. JSON Output Schema Specification
+
+When `--format json` is specified, SafeMigrate outputs a single machine-readable JSON object to stdout:
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SafeMigrateScanResult",
+  "type": "object",
+  "properties": {
+    "dialect": { "type": "string", "enum": ["postgresql", "mysql"] },
+    "files_scanned": { "type": "integer" },
+    "clean_files": { "type": "integer" },
+    "flagged_files": { "type": "integer" },
+    "total_violations": { "type": "integer" },
+    "has_hazards": { "type": "boolean" },
+    "violations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "file": { "type": "string" },
+          "line_number": { "type": "integer" },
+          "rule_id": { "type": "string" },
+          "severity": { "type": "string", "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"] },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "lock_mode": { "type": "string" },
+          "table_rewrite": { "type": "boolean" },
+          "statement": { "type": "string" },
+          "remediation": {
+            "type": "object",
+            "properties": {
+              "title": { "type": "string" },
+              "steps": { "type": "array", "items": { "type": "string" } },
+              "explanation": { "type": "string" }
+            }
+          }
+        },
+        "required": ["file", "line_number", "rule_id", "severity", "title", "description", "lock_mode", "table_rewrite", "statement", "remediation"]
+      }
+    }
+  },
+  "required": ["dialect", "files_scanned", "clean_files", "flagged_files", "total_violations", "has_hazards", "violations"]
+}
+```
+
+---
+
+## 6. Framework-Specific Migration Guides
+
+### Alembic (Python / SQLAlchemy)
+When authoring Alembic migrations:
+- For indexes: Use `op.create_index(..., postgresql_concurrently=True)`. Note that Alembic requires `with op.get_context().autocommit_block():` to run `CREATE INDEX CONCURRENTLY`.
+- For foreign keys: Create constraint with `initially="DEFERRED"` or use `op.execute("ALTER TABLE ... ADD CONSTRAINT ... NOT VALID")`.
+- For column defaults: Add column without server default, then add `op.alter_column(..., server_default=...)`.
+
+### Django Migrations (Python)
+- For indexes: Use `AddIndexConcurrently(model_name=..., index=...)` inside an `atomic = False` Migration class.
+- For foreign keys: Use `SeparateDatabaseAndState` to apply `NOT VALID` DDL via `RunSQL`.
+
+### Ruby on Rails (ActiveRecord)
+- For indexes: Use `add_index :table, :column, algorithm: :concurrently` inside `disable_ddl_transaction!`.
+- For foreign keys: Use `add_foreign_key :table, :target, validate: false`, followed by `validate_foreign_key :table, :target`.
+
+---
+
+## 7. Composite GitHub Action Specification (`action.yml`)
+
+SafeMigrate is available as a zero-dependency composite GitHub Action:
+
+```yaml
+name: SafeMigrate Linter
+description: Lint SQL migrations for locking hazards and table rewrites in CI/CD.
+author: redintDev
+inputs:
+  path:
+    description: Path to SQL file or migrations directory
+    required: false
+    default: "migrations"
+  dialect:
+    description: Database dialect (postgresql or mysql)
+    required: false
+    default: "postgresql"
+  max-severity:
+    description: Maximum allowed severity before failing the check (LOW, MEDIUM, HIGH, CRITICAL)
+    required: false
+    default: "HIGH"
+  publish-summary:
+    description: Publish formatted Markdown summary to GitHub Actions Step Summary
+    required: false
+    default: "true"
+```
+
+### Complete Workflow Example
+```yaml
+name: Database Migration Safety Check
+on:
+  pull_request:
+    paths:
+      - 'db/migrations/**'
+      - '**/*.sql'
+
+jobs:
+  safemigrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run SafeMigrate
+        uses: redintDev/safemigrate@v0.1
+        with:
+          path: "db/migrations"
+          dialect: "postgresql"
+          max-severity: "HIGH"
+          publish-summary: "true"
+```
+
+---
+
+## 8. Git Pre-Commit Hook Specification (`.pre-commit-hooks.yaml`)
+
+```yaml
+- id: safemigrate
+  name: SafeMigrate DDL Lock Linter
+  description: Prevent hazardous database migration locks before git commit.
+  entry: safemigrate lint
+  language: python
+  types: [sql]
+  require_serial: true
+```
+
+Developers can enforce local verification by adding to `.pre-commit-config.yaml`:
+```yaml
+repos:
+  - repo: https://github.com/redintDev/safemigrate
+    rev: v0.1.0
+    hooks:
+      - id: safemigrate
+```
+
+---
+
+## 9. Contact & Upstream Resources
+- **Web Portal & Interactive Simulator**: https://redintdev.github.io/safemigrate/
+- **GitHub Repository**: https://github.com/redintDev/safemigrate
+- **Maintainer & Inquiries**: abdellatifaamrani4@gmail.com

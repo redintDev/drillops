@@ -1,0 +1,103 @@
+# SafeMigrate
+
+> Zero-Downtime Database Migration Linter & Safety Auditor
+> Statically analyzes SQL migration scripts in CI/CD pull requests to block table rewrites, lock queuing, and production downtime.
+
+SafeMigrate is a lightweight, zero-dependency static linter for PostgreSQL and MySQL DDL migrations. It inspects schema migrations before deployment to detect hazardous statements that request table-level locks (`AccessExclusiveLock`, `ShareLock`) or trigger full table rewrites, providing safe, zero-downtime multi-step SQL remediations.
+
+## Quick Reference
+- **1-Line Installer**: `curl -sSL https://raw.githubusercontent.com/redintDev/safemigrate/main/install.sh | bash`
+- **CLI Command**: `safemigrate lint <file.sql...>` or `safemigrate check <directory>`
+- **Composite GitHub Action**: `uses: redintDev/safemigrate@v0.1`
+- **Git Pre-commit Hook**: `repo: https://github.com/redintDev/safemigrate`, `rev: v0.1.0`, `hooks: - id: safemigrate`
+- **Web Portal & Live Simulator**: https://redintdev.github.io/safemigrate/
+- **Full LLM Documentation**: https://redintdev.github.io/safemigrate/llms-full.txt
+
+---
+
+## The Lock Queuing Problem Explained
+In PostgreSQL and MySQL, schema modifications (DDL) often request exclusive locks (`AccessExclusiveLock`). Even if the DDL itself only takes 10 milliseconds:
+1. An existing slow read query (`SELECT`) holds an `AccessShareLock`.
+2. The migration's `ALTER TABLE` requests `AccessExclusiveLock` and enters the lock wait queue.
+3. Because lock requests are FIFO, **all subsequent SELECT, INSERT, UPDATE, and DELETE queries are blocked behind the waiting migration**.
+4. Application connection pools exhaust within seconds, leading to immediate cascading API outages.
+
+SafeMigrate prevents this by enforcing strict lock timeouts and decomposing risky DDL into safe, non-blocking operational steps.
+
+---
+
+## Core Rule Taxonomy
+
+### PostgreSQL Rules
+| Rule ID | Severity | Name | Hazard & Lock Impact | Safe Remediation |
+| :--- | :---: | :--- | :--- | :--- |
+| **`SM-01`** | `CRITICAL` | Volatile Default Value | `ADD COLUMN ... DEFAULT <volatile>` (e.g. `now()`, `uuid_generate_v4()`, `gen_random_uuid()`) forces a full physical table rewrite while holding `AccessExclusiveLock`. | 1. Add column as `NULL`.<br>2. Backfill in small batched transactions.<br>3. Set `DEFAULT` for future inserts.<br>4. Apply `NOT NULL` constraint with validation. |
+| **`SM-02`** | `HIGH` | Non-Concurrent Index Creation | `CREATE INDEX` without `CONCURRENTLY` acquires a `ShareLock`, blocking all writes (`INSERT`, `UPDATE`, `DELETE`) for the entire duration of index building. | Execute `CREATE INDEX CONCURRENTLY` outside of a multi-statement transaction block. |
+| **`SM-03`** | `HIGH` | Immediate Foreign Key Validation | `ADD CONSTRAINT ... FOREIGN KEY` without `NOT VALID` performs an immediate sequential table scan while holding `ShareRowExclusiveLock`. | 1. `ADD CONSTRAINT ... FOREIGN KEY ... NOT VALID;`<br>2. `ALTER TABLE ... VALIDATE CONSTRAINT;` (validates without blocking writes). |
+| **`SM-04`** | `CRITICAL` | Column Type Alteration | `ALTER COLUMN ... TYPE` rewrites the table and all its indexes under `AccessExclusiveLock`. | 1. Add new column with desired type.<br>2. Dual-write via trigger or app code.<br>3. Backfill historical records in batches.<br>4. Swap columns or update application readers. |
+| **`SM-05`** | `MEDIUM` | Column Drop Without Lock Timeout | `DROP COLUMN` requires `AccessExclusiveLock`. Without a tight `lock_timeout`, it can wait indefinitely and block the query queue. | Always set `SET LOCAL lock_timeout = '2s';` immediately prior to `DROP COLUMN`. |
+| **`SM-06`** | `LOW` | Missing Lock Timeout | Migration file contains DDL statements without setting `lock_timeout`, leaving production vulnerable to lock queue starvation. | Add `SET LOCAL lock_timeout = '2s';` or `SET statement_timeout = '5s';` at the top of the migration file. |
+
+### MySQL & MariaDB Rules
+| Rule ID | Severity | Name | Hazard & Lock Impact | Safe Remediation |
+| :--- | :---: | :--- | :--- | :--- |
+| **`SM-MY-01`** | `HIGH` | Missing Online Algorithm | `ALTER TABLE` without `ALGORITHM=INSTANT/INPLACE` risks fallback to `ALGORITHM=COPY`. | Explicitly append `ALGORITHM=INSTANT` or `ALGORITHM=INPLACE, LOCK=NONE;` |
+| **`SM-MY-02`** | `MEDIUM` | Missing Lock None Clause | DDL without explicit `LOCK=NONE` risks acquiring exclusive or shared table locks. | Append `LOCK=NONE;` to DDL statements. |
+| **`SM-MY-03`** | `HIGH` | Foreign Key Write Lock | Adding foreign keys takes `LOCK=SHARED`, blocking writes on parent & child tables. | Set `lock_wait_timeout=2`, pre-create child index, and use `ALGORITHM=INPLACE, LOCK=SHARED;` |
+| **`SM-MY-04`** | `CRITICAL` | Column Type Rebuild | `MODIFY/CHANGE COLUMN` forces full table rewrite. | Use shadow column dual-write pattern or `pt-online-schema-change` / `gh-ost`. |
+| **`SM-MY-05`** | `LOW` | Missing Lock Wait Timeout | Default `lock_wait_timeout` is 1 year (31.5M seconds). Blocked DDL stalls all queries. | Add `SET SESSION lock_wait_timeout = 2;` at the top of MySQL migration scripts. |
+
+---
+
+## Turnkey Integrations
+
+### 1. GitHub Actions (.github/workflows/safemigrate.yml)
+```yaml
+name: SafeMigrate Linter
+on:
+  pull_request:
+    paths:
+      - 'migrations/**'
+      - '**/*.sql'
+
+jobs:
+  lint-ddl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: redintDev/safemigrate@v0.1
+        with:
+          path: "migrations"
+          dialect: "postgresql"
+          publish-summary: "true"
+```
+
+### 2. Pre-Commit Hook (.pre-commit-config.yaml)
+```yaml
+repos:
+  - repo: https://github.com/redintDev/safemigrate
+    rev: v0.1.0
+    hooks:
+      - id: safemigrate
+```
+
+### 3. CLI In Terminal / Scripts
+```bash
+# Lint specific SQL files
+safemigrate lint migrations/001_init.sql migrations/002_users.sql
+
+# Lint directory recursively
+safemigrate check ./db/migrations --dialect postgresql
+
+# Machine-readable JSON output for automated pipelines
+safemigrate check ./db/migrations --format json
+```
+
+---
+
+## Machine-Readable Resources
+- Full Spec: https://redintdev.github.io/safemigrate/llms-full.txt
+- Robots: https://redintdev.github.io/safemigrate/robots.txt
+- Sitemap: https://redintdev.github.io/safemigrate/sitemap.xml
+- GitHub Repository: https://github.com/redintDev/safemigrate
+- Maintainer Contact: abdellatifaamrani4@gmail.com
