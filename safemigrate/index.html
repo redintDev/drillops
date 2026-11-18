@@ -243,6 +243,34 @@
     .status-pill.high { background: rgba(249, 115, 22, 0.2); color: var(--high); border: 1px solid var(--high); }
     .status-pill.medium { background: rgba(234, 179, 8, 0.2); color: var(--medium); border: 1px solid var(--medium); }
     .status-pill.safe { background: rgba(16, 185, 129, 0.2); color: var(--safe); border: 1px solid var(--safe); }
+    .fix-btn {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+      border: 1px solid #3b82f6;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+    .fix-btn:hover {
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+    }
+    .fix-toast {
+      padding: 8px 12px;
+      background: rgba(16, 185, 129, 0.15);
+      border-top: 1px solid rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
     .hazard-item {
       background: #161e2e;
       border: 1px solid var(--card-border);
@@ -399,9 +427,13 @@
           <div class="input-pane">
             <div class="pane-header">
               <span id="dialectLabel">Migration SQL (PostgreSQL Dialect)</span>
-              <span>Edit to audit live</span>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button id="btnAutoFix" class="fix-btn" onclick="autoFixSQL()" title="Automatically rewrite unsafe DDL into zero-downtime SQL">⚡ Auto-Fix SQL</button>
+                <span style="color: var(--text-muted); font-size: 0.8rem;">Live Audit</span>
+              </div>
             </div>
             <textarea id="sqlInput" class="sql-editor" spellcheck="false" oninput="runLiveAudit()">ALTER TABLE users ADD COLUMN token UUID DEFAULT gen_random_uuid();</textarea>
+            <div id="fixToast" class="fix-toast" style="display: none;"></div>
           </div>
 
           <div class="output-pane" id="outputPane">
@@ -684,10 +716,17 @@ curl -sSL https://raw.githubusercontent.com/redintDev/safemigrate/main/install.s
         statusHtml = `<span class="status-pill medium">⚠️ Advisory Warning</span>`;
       }
 
+      let actionBtn = violations.length > 0
+        ? `<button class="fix-btn" onclick="autoFixSQL()">⚡ Auto-Fix SQL</button>`
+        : ``;
+
       let html = `
         <div class="audit-header">
-          <span style="font-weight: 600; font-size: 0.9rem;">Audit Verdict (${currentDialect.toUpperCase()}):</span>
-          ${statusHtml}
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-weight: 600; font-size: 0.9rem;">Audit Verdict (${currentDialect.toUpperCase()}):</span>
+            ${statusHtml}
+          </div>
+          ${actionBtn}
         </div>
       `;
 
@@ -716,6 +755,117 @@ curl -sSL https://raw.githubusercontent.com/redintDev/safemigrate/main/install.s
       }
 
       output.innerHTML = html;
+    }
+
+    function autoFixSQL() {
+      const sqlInput = document.getElementById("sqlInput");
+      const toast = document.getElementById("fixToast");
+      const sql = sqlInput.value;
+      let fixed = sql.trim();
+      let changes = [];
+
+      if (currentDialect === "postgresql") {
+        let stmts = fixed.split(";").map(s => s.trim()).filter(Boolean);
+        let outStmts = [];
+
+        // Check lock_timeout
+        if (!stmts.some(s => s.toUpperCase().includes("LOCK_TIMEOUT"))) {
+          outStmts.push("-- [SafeMigrate] Strict lock timeout to prevent queue starvation\nSET lock_timeout = '2s'");
+          changes.push("Added SET lock_timeout = '2s' (SM-06)");
+        }
+
+        for (let s of stmts) {
+          const sUpper = s.toUpperCase();
+
+          // SM-02: CREATE INDEX without CONCURRENTLY
+          if ((sUpper.includes("CREATE INDEX") || sUpper.includes("CREATE UNIQUE INDEX")) && !sUpper.includes("CONCURRENTLY")) {
+            let replaced = s.replace(/CREATE\s+(UNIQUE\s+)?INDEX\b/i, "CREATE $1INDEX CONCURRENTLY IF NOT EXISTS ");
+            replaced = replaced.replace(/\s+/g, " ");
+            outStmts.push(`-- [SafeMigrate] Non-blocking index creation\n${replaced}`);
+            changes.push("Added CONCURRENTLY IF NOT EXISTS (SM-02)");
+            continue;
+          }
+
+          // SM-03: ADD FOREIGN KEY without NOT VALID
+          if (sUpper.includes("FOREIGN KEY") && !sUpper.includes("NOT VALID") && sUpper.includes("ALTER TABLE")) {
+            const fkMatch = s.match(/ALTER\s+TABLE\s+(?:ONLY\s+)?([^\s;]+)\s+ADD\s+(?:CONSTRAINT\s+([^\s;]+)\s+)?FOREIGN\s+KEY\s*\(([^\)]+)\)\s*REFERENCES\s+([^\s;(]+)\s*\(([^\)]+)\)/i);
+            if (fkMatch) {
+              const tbl = fkMatch[1];
+              const constraint = fkMatch[2];
+              const cols = fkMatch[3];
+              const refTbl = fkMatch[4];
+              const refCols = fkMatch[5];
+              const cName = constraint || `fk_${tbl}_${cols.replace(/\s+/g, "").replace(/,/g, "_")}`;
+              const step1 = `ALTER TABLE ${tbl} ADD CONSTRAINT ${cName} FOREIGN KEY (${cols}) REFERENCES ${refTbl}(${refCols}) NOT VALID`;
+              const step2 = `ALTER TABLE ${tbl} VALIDATE CONSTRAINT ${cName}`;
+              outStmts.push(`-- [SafeMigrate] 2-step non-blocking foreign key addition\n${step1};\n${step2}`);
+              changes.push("Split FOREIGN KEY into NOT VALID + VALIDATE (SM-03)");
+              continue;
+            }
+          }
+
+          // SM-01: ADD COLUMN volatile default
+          if (sUpper.includes("ALTER TABLE") && sUpper.includes("ADD") && sUpper.includes("DEFAULT")) {
+            if (/gen_random_uuid\(\)|random\(\)|uuid_generate_|clock_timestamp\(\)/i.test(s)) {
+              const colMatch = s.match(/ALTER\s+TABLE\s+(?:ONLY\s+)?([^\s;]+)\s+ADD\s+(?:COLUMN\s+)?([^\s;]+)\s+([^;]+?)\s+DEFAULT\s+([^;,]+)/i);
+              if (colMatch) {
+                const tbl = colMatch[1];
+                const col = colMatch[2];
+                const colType = colMatch[3];
+                const defVal = colMatch[4];
+                const step1 = `ALTER TABLE ${tbl} ADD COLUMN ${col} ${colType}`;
+                const step2 = `ALTER TABLE ${tbl} ALTER COLUMN ${col} SET DEFAULT ${defVal.trim()}`;
+                const step3 = `-- Step 3 (Run outside migration transaction in batches):\n-- UPDATE ${tbl} SET ${col} = ${defVal.trim()} WHERE ${col} IS NULL;`;
+                outStmts.push(`-- [SafeMigrate] Zero-downtime 3-step column addition\n${step1};\n${step2};\n${step3}`);
+                changes.push(`Rewrote volatile DEFAULT on '${col}' to 3-step safe pattern (SM-01)`);
+                continue;
+              }
+            }
+          }
+
+          outStmts.push(s);
+        }
+        fixed = outStmts.join(";\n\n") + ";\n";
+      } else {
+        // MySQL / MariaDB
+        let stmts = fixed.split(";").map(s => s.trim()).filter(Boolean);
+        let outStmts = [];
+
+        if (!stmts.some(s => s.toUpperCase().includes("LOCK_WAIT_TIMEOUT"))) {
+          outStmts.push("-- [SafeMigrate] Enforce short metadata lock timeout\nSET SESSION lock_wait_timeout = 5");
+          changes.push("Added SET SESSION lock_wait_timeout = 5 (SM-MY-05)");
+        }
+
+        for (let s of stmts) {
+          const sUpper = s.toUpperCase();
+          if (sUpper.includes("ALTER TABLE") && (sUpper.includes("ADD") || sUpper.includes("DROP") || sUpper.includes("MODIFY"))) {
+            let clauses = [];
+            if (!sUpper.includes("ALGORITHM")) clauses.push("ALGORITHM=INPLACE");
+            if (!sUpper.includes("LOCK=") && !sUpper.includes("LOCK ")) clauses.push("LOCK=NONE");
+
+            if (clauses.length > 0) {
+              outStmts.push(`-- [SafeMigrate] Enforce online non-blocking DDL\n${s}, ${clauses.join(", ")}`);
+              changes.push(`Appended ${clauses.join(", ")} (SM-MY-01/02)`);
+              continue;
+            }
+          }
+          outStmts.push(s);
+        }
+        fixed = outStmts.join(";\n\n") + ";\n";
+      }
+
+      sqlInput.value = fixed;
+      runLiveAudit();
+
+      if (toast) {
+        if (changes.length > 0) {
+          toast.innerHTML = `<span>✔ <strong>SafeMigrate Auto-Fix Applied:</strong> ${changes.join("; ")}</span><button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:#6ee7b7;cursor:pointer;font-size:1.1rem;line-height:1;">&times;</button>`;
+          toast.style.display = "flex";
+        } else {
+          toast.innerHTML = `<span>✔ Migration already safe. Zero fixes required.</span><button onclick="this.parentElement.style.display='none'" style="background:none;border:none;color:#6ee7b7;cursor:pointer;font-size:1.1rem;line-height:1;">&times;</button>`;
+          toast.style.display = "flex";
+        }
+      }
     }
 
     // Run audit on page load
