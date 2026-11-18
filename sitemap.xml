@@ -60,4 +60,10 @@
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
+  <url>
+    <loc>https://redintdev.github.io/drillops/docs/ZERO_DOWNTIME_MIGRATION_GUIDE.md</loc>
+    <lastmod>2026-11-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
 </urlset>
