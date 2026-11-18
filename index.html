@@ -242,6 +242,74 @@
         </div>
     </section>
 
+    <!-- Synergistic Ecosystem: The Database Reliability Suite -->
+    <section id="ecosystem" class="max-w-5xl mx-auto px-6 py-12 border-t border-slate-800/60">
+        <div class="bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-slate-900 border border-blue-900/40 rounded-3xl p-8 md:p-10 relative overflow-hidden">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-xs text-blue-300 font-mono font-semibold mb-3">
+                        🤝 The Database Reliability Suite
+                    </div>
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">Complete End-to-End Database Reliability</h2>
+                    <p class="text-xs md:text-sm text-slate-300 mt-2 max-w-2xl leading-relaxed">
+                        Database outages happen in two places: <strong>pre-deployment schema locks</strong> in pull requests and <strong>post-deployment restore failures</strong> during disasters. The Database Reliability Suite solves both:
+                    </p>
+                </div>
+                <div class="flex items-center gap-3 shrink-0">
+                    <a href="safemigrate/" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition flex items-center gap-2 shadow-lg shadow-blue-500/20">
+                        <span>⚡ Launch SafeMigrate Simulator</span> &rarr;
+                    </a>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- SafeMigrate Card -->
+                <div class="bg-slate-950/80 border border-blue-800/40 rounded-2xl p-6 flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-mono font-bold uppercase tracking-wider text-blue-400">Phase 1: Pre-Deployment</span>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">LINTER &amp; FIXER</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">SafeMigrate DDL Lock Linter</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-4">
+                            Statically audits migration scripts for <code>AccessExclusiveLock</code> queue starvation, missing lock timeouts, and table rewrites in CI/CD pull requests before deployment. Features 1-click AST automated remediation.
+                        </p>
+                        <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 font-mono text-[11px] text-slate-300 space-y-1">
+                            <div class="text-slate-400"># 1-Line Turnkey Installer</div>
+                            <div class="text-blue-300">curl -sSL https://raw.githubusercontent.com/redintDev/drillops/main/safemigrate/install.sh | bash</div>
+                        </div>
+                    </div>
+                    <div class="pt-2 flex items-center justify-between text-[11px] text-slate-400">
+                        <span>Postgres &bull; MySQL &bull; GitHub Action &bull; Pre-Commit</span>
+                        <a href="safemigrate/" class="text-blue-400 hover:text-white font-semibold transition">Live Simulator &rarr;</a>
+                    </div>
+                </div>
+
+                <!-- DrillOps Card -->
+                <div class="bg-slate-950/80 border border-indigo-800/40 rounded-2xl p-6 flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-mono font-bold uppercase tracking-wider text-indigo-400">Phase 2: Post-Deployment</span>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">DR &amp; SOC 2</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">DrillOps Disaster Recovery Verifier</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-4">
+                            Continuously executes automated ephemeral restore drills in isolated sandboxes, benchmarks sub-second RTO, enforces RPO freshness SLAs, audits 3-2-1 backup redundancy, and packages SOC 2 CC9.1 / ISO 27001 evidence.
+                        </p>
+                        <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 font-mono text-[11px] text-slate-300 space-y-1">
+                            <div class="text-slate-400"># Verify backup in ephemeral container</div>
+                            <div class="text-emerald-300">drillops verify --backup prod.dump --type postgres</div>
+                        </div>
+                    </div>
+                    <div class="pt-2 flex items-center justify-between text-[11px] text-slate-400">
+                        <span>RTO &lt; 0.2s &bull; Vanta &bull; Drata &bull; Prometheus</span>
+                        <a href="#simulator" class="text-indigo-400 hover:text-white font-semibold transition">Try DR Drill &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Risk Exposure Calculator Section -->
     <section id="calculator" class="max-w-5xl mx-auto px-6 py-16">
         <div class="text-center mb-10">
@@ -390,7 +458,7 @@
             </p>
         </div>
 
-        <div class="grid md:grid-cols-2 gap-6">
+        <div class="grid md:grid-cols-3 gap-6">
             <!-- PostgreSQL Runbook Card -->
             <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition space-y-4">
                 <div class="flex items-center gap-3">
@@ -404,7 +472,7 @@
                     Automate ephemeral restore drills, measure sub-second RTO, audit Write-Ahead Log (WAL) archive continuity for Point-in-Time Recovery, and compile SOC 2 CC9.1 / ISO 27001 evidence.
                 </p>
                 <div class="pt-2 flex items-center justify-between">
-                    <span class="text-[11px] font-mono text-emerald-400">SOC 2 CC9.1 &bull; ISO 27001 &bull; HIPAA</span>
+                    <span class="text-[11px] font-mono text-emerald-400">SOC 2 CC9.1 &bull; ISO 27001</span>
                     <a href="docs/POSTGRES_DR_RUNBOOK.md" target="_blank" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition">Read Runbook &rarr;</a>
                 </div>
             </div>
@@ -414,16 +482,34 @@
                 <div class="flex items-center gap-3">
                     <span class="text-3xl">🐬</span>
                     <div>
-                        <h3 class="text-base font-bold text-white">MySQL & MariaDB DR SLA Runbook</h3>
+                        <h3 class="text-base font-bold text-white">MySQL & MariaDB DR Runbook</h3>
                         <p class="text-xs text-slate-400">MySQL 5.7, 8.0, 8.4 LTS & MariaDB 10.5+</p>
                     </div>
                 </div>
                 <p class="text-xs text-slate-300 leading-relaxed">
-                    Resolve mysqldump lock caveats and collation drift, audit binary log (binlog) sequence gaps and magic headers, enforce RPO freshness, and package auditor-ready compliance dossiers.
+                    Resolve mysqldump lock caveats and collation drift, audit binary log (binlog) sequence gaps and magic headers, enforce RPO freshness, and package compliance dossiers.
                 </p>
                 <div class="pt-2 flex items-center justify-between">
-                    <span class="text-[11px] font-mono text-cyan-400">SOC 2 CC9.1 &bull; ISO 27001 &bull; HIPAA</span>
+                    <span class="text-[11px] font-mono text-cyan-400">SOC 2 CC9.1 &bull; ISO 27001</span>
                     <a href="docs/MYSQL_DR_RUNBOOK.md" target="_blank" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition">Read Runbook &rarr;</a>
+                </div>
+            </div>
+
+            <!-- Zero-Downtime Migration Guide Card -->
+            <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition space-y-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">🛡️</span>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Zero-Downtime Migration Guide</h3>
+                        <p class="text-xs text-slate-400">PostgreSQL & MySQL Online DDL Strategies</p>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    Prevent production outages caused by AccessExclusiveLock queue starvation, metadata lock spikes, and table rewrites. Master the 6 universal zero-downtime DDL patterns.
+                </p>
+                <div class="pt-2 flex items-center justify-between">
+                    <span class="text-[11px] font-mono text-blue-400">Lock Starvation &bull; Online DDL</span>
+                    <a href="docs/ZERO_DOWNTIME_MIGRATION_GUIDE.md" target="_blank" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition">Read Guide &rarr;</a>
                 </div>
             </div>
         </div>
@@ -551,6 +637,8 @@
                 <a href="#runbooks" class="hover:text-slate-300">Runbooks</a>
                 <a href="docs/POSTGRES_DR_RUNBOOK.md" class="hover:text-slate-300">PostgreSQL Runbook</a>
                 <a href="docs/MYSQL_DR_RUNBOOK.md" class="hover:text-slate-300">MySQL Runbook</a>
+                <a href="docs/ZERO_DOWNTIME_MIGRATION_GUIDE.md" class="hover:text-slate-300">Migration Guide</a>
+                <a href="safemigrate/" class="text-blue-400 hover:text-white">SafeMigrate Linter</a>
                 <a href="llms.txt" class="hover:text-slate-300">llms.txt</a>
                 <a href="https://github.com/redintDev/drillops" target="_blank" rel="noopener" class="hover:text-slate-300">GitHub</a>
             </div>
