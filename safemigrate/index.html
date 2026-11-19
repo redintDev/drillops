@@ -409,7 +409,7 @@
       <h1>Prevent Production Outages From Database Table Locks in CI/CD</h1>
       <p>Statically inspect PostgreSQL & MySQL migration scripts in pull requests before deployment. Stop invisible <code>AccessExclusiveLock</code> queue starvation with zero database infrastructure required.</p>
       <div class="badges">
-        <span class="badge green">✔ 64+ Automated Tests Passing</span>
+        <span class="badge green">✔ 74 Automated Tests Passing (64+ Core &amp; Extensions)</span>
         <span class="badge">Python 3.9+</span>
         <span class="badge">Composite GitHub Action</span>
         <span class="badge">Pre-Commit Hook</span>
@@ -547,6 +547,16 @@ repos:
           <div class="code-block-wrapper">
             <button class="copy-code-btn" onclick="copySnippet('codePip', this)">📋 Copy</button>
             <div class="code-block" id="codePip">pip install "git+https://github.com/redintDev/drillops.git#subdirectory=safemigrate"</div>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <h3>Rule Catalog & Examples</h3>
+          <p>Inspect all 11 built-in safety rules and test against turnkey migration examples directly in your terminal.</p>
+          <div class="code-block-wrapper">
+            <button class="copy-code-btn" onclick="copySnippet('codeRules', this)">📋 Copy</button>
+            <div class="code-block" id="codeRules">safemigrate rules --dialect postgresql
+safemigrate lint examples/migrations/001_unsafe_migrations.sql</div>
           </div>
         </div>
       </div>
