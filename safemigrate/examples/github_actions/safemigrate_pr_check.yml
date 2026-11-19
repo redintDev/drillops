@@ -1,3 +1,8 @@
+# SafeMigrate GitHub Actions PR Workflow Example
+# Drop into your repository as .github/workflows/safemigrate.yml
+# Statically audits database DDL migrations for lock queuing hazards and table rewrites.
+# Documentation: https://redintdev.github.io/drillops/safemigrate/
+
 name: "SafeMigrate PR Check"
 
 on:
@@ -6,9 +11,13 @@ on:
       - "migrations/**"
       - "db/migrations/**"
       - "sql/**"
+      - "**/*.sql"
   push:
     branches:
       - main
+
+permissions:
+  contents: read
 
 jobs:
   lint-migrations:
@@ -22,6 +31,7 @@ jobs:
         uses: redintDev/drillops/safemigrate@main
         with:
           path: "migrations"
-          dialect: "postgresql"
-          strict: "false"
-          publish-summary: "true"
+          dialect: "postgresql"     # or "mysql"
+          strict: "false"           # set "true" to fail on warnings (e.g. lock_timeout missing)
+          publish-summary: "true"   # publishes rich markdown report to GitHub Step Summary
+          suggest-fixes: "true"     # generates unified diff with zero-downtime rewrites
