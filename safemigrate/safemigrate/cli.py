@@ -47,6 +47,11 @@ def create_parser() -> argparse.ArgumentParser:
     fix_parser.add_argument("--check", action="store_true", help="Check whether migrations require fixes without modifying them (exit 1 if fixes needed)")
     fix_parser.add_argument("--dialect", default="postgresql", choices=["postgresql", "mysql"], help="SQL dialect")
 
+    # Command: rules
+    rules_parser = subparsers.add_parser("rules", help="List all migration safety rules and hazards")
+    rules_parser.add_argument("--dialect", default=None, choices=["postgresql", "mysql"], help="Filter rules by dialect (default: all)")
+    rules_parser.add_argument("--format", default="terminal", choices=["terminal", "json"], help="Output format")
+
     return parser
 
 
@@ -94,6 +99,40 @@ def main(args: List[str] = None) -> int:
     if not parsed_args.command:
         parser.print_help()
         return 0
+
+    if parsed_args.command == "rules":
+        from safemigrate.rules.mysql import ALL_MYSQL_RULES
+        from safemigrate.rules.postgres import ALL_POSTGRES_RULES
+
+        if parsed_args.dialect == "postgresql":
+            selected_rules = ALL_POSTGRES_RULES
+        elif parsed_args.dialect == "mysql":
+            selected_rules = ALL_MYSQL_RULES
+        else:
+            selected_rules = ALL_POSTGRES_RULES + ALL_MYSQL_RULES
+
+        if parsed_args.format == "json":
+            payload = [
+                {
+                    "rule_id": r.rule_id,
+                    "name": r.name,
+                    "dialect": r.dialect.value,
+                    "description": r.description,
+                }
+                for r in selected_rules
+            ]
+            print(json.dumps(payload, indent=2))
+            return 0
+        else:
+            print("SafeMigrate Safety Rule Catalog")
+            print("=" * 80)
+            print(f"{'Rule ID':<12} {'Dialect':<12} {'Rule Name':<35} {'Description'}")
+            print("-" * 80)
+            for r in selected_rules:
+                print(f"{r.rule_id:<12} {r.dialect.value:<12} {r.name:<35} {r.description}")
+            print("=" * 80)
+            print(f"Total Rules: {len(selected_rules)}")
+            return 0
 
     dialect = Dialect(parsed_args.dialect)
     linter = SafeMigrateLinter(dialect=dialect)

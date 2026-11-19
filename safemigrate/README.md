@@ -3,7 +3,7 @@
 > **Zero-Downtime Database Migration Linter & Safety Auditor**  
 > Protect your production databases from lock queuing, table rewrites, and self-inflicted downtime in CI/CD pull requests.
 
-[![Tests](https://img.shields.io/badge/tests-54%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-74%20passed-brightgreen.svg)]()
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)]()
 
@@ -56,12 +56,29 @@ curl -sSL https://raw.githubusercontent.com/redintDev/safemigrate/main/install.s
 pip install -e /workspace/projects/safemigrate
 ```
 
-### 2. Lint a Migration File
+### 2. View Safety Rule Catalog
 ```bash
-safemigrate lint migrations/004_add_user_index.sql
+# Inspect all 11 built-in safety rules in formatted table
+safemigrate rules
+
+# Filter by dialect
+safemigrate rules --dialect postgresql
+safemigrate rules --dialect mysql
+
+# Export rule schema to JSON
+safemigrate rules --format json
 ```
 
-### 3. Automatically Rewrite Dangerous Migrations (Auto-Fixer)
+### 3. Lint a Migration File
+```bash
+safemigrate lint migrations/004_add_user_index.sql
+
+# Test against built-in turnkey migration examples
+safemigrate lint examples/migrations/001_unsafe_migrations.sql
+safemigrate lint examples/migrations/001_safe_migrations.sql
+```
+
+### 4. Automatically Rewrite Dangerous Migrations (Auto-Fixer)
 ```bash
 # Preview safe zero-downtime rewrite to stdout
 safemigrate fix migrations/004_unsafe_migration.sql
@@ -79,7 +96,7 @@ safemigrate fix migrations/ -i
 safemigrate fix migrations/004_unsafe_migration.sql -o migrations/004_safe.sql
 ```
 
-### 4. Scan Entire Migrations Directory
+### 5. Scan Entire Migrations Directory
 ```bash
 safemigrate check ./migrations/
 ```
