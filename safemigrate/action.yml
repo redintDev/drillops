@@ -49,26 +49,37 @@ runs:
     - name: Install SafeMigrate
       shell: bash
       run: |
+        set -euo pipefail
         python -m pip install --upgrade pip
         pip install "${{ github.action_path }}"
 
     - name: Execute SafeMigrate Lint
       id: run-linter
       shell: bash
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_DIALECT: ${{ inputs.dialect }}
+        INPUT_STRICT: ${{ inputs.strict }}
+        INPUT_PUBLISH_SUMMARY: ${{ inputs.publish-summary }}
+        INPUT_SUGGEST_FIXES: ${{ inputs.suggest-fixes }}
       run: |
+        set -euo pipefail
+
         STRICT_FLAG=""
-        if [ "${{ inputs.strict }}" = "true" ]; then
+        if [ "$INPUT_STRICT" = "true" ]; then
           STRICT_FLAG="--strict"
         fi
 
-        TARGET_PATH="${{ inputs.path }}"
+        TARGET_PATH="$INPUT_PATH"
         CMD_SUB="check"
         if [ -f "$TARGET_PATH" ]; then
           CMD_SUB="lint"
         fi
 
         # First run in json mode to capture structured outputs
-        JSON_OUT=$(safemigrate $CMD_SUB "$TARGET_PATH" --dialect "${{ inputs.dialect }}" --format json $STRICT_FLAG || true)
+        set +e
+        JSON_OUT=$(safemigrate "$CMD_SUB" "$TARGET_PATH" --dialect "$INPUT_DIALECT" --format json $STRICT_FLAG)
+        set -e
         
         # Calculate stats safely via environment variable (avoiding shell string interpolation)
         export SAFEMIGRATE_JSON_DATA="$JSON_OUT"
@@ -77,29 +88,33 @@ runs:
         PASSED=$(python -c "import json, os; data = json.loads(os.environ.get('SAFEMIGRATE_JSON_DATA', '[]')); print('PASSED' if all(x.get('passed', False) for x in data) else 'FAILED')" 2>/dev/null || echo "FAILED")
         unset SAFEMIGRATE_JSON_DATA
 
-        echo "critical_hazards=$CRIT" >> $GITHUB_OUTPUT
-        echo "high_hazards=$HIGH" >> $GITHUB_OUTPUT
-        echo "lint_status=$PASSED" >> $GITHUB_OUTPUT
+        echo "critical_hazards=$CRIT" >> "$GITHUB_OUTPUT"
+        echo "high_hazards=$HIGH" >> "$GITHUB_OUTPUT"
+        echo "lint_status=$PASSED" >> "$GITHUB_OUTPUT"
 
         # Now run in github format for annotations and step summary
-        SUMMARY_OUT=$(safemigrate $CMD_SUB "$TARGET_PATH" --dialect "${{ inputs.dialect }}" --format github $STRICT_FLAG || true)
+        set +e
+        SUMMARY_OUT=$(safemigrate "$CMD_SUB" "$TARGET_PATH" --dialect "$INPUT_DIALECT" --format github $STRICT_FLAG)
+        set -e
         
         # Emit annotations to workflow stdout
         echo "$SUMMARY_OUT"
 
-        if [ "${{ inputs.publish-summary }}" = "true" ] && [ -n "$GITHUB_STEP_SUMMARY" ]; then
+        if [ "$INPUT_PUBLISH_SUMMARY" = "true" ] && [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
           echo "$SUMMARY_OUT" | grep -v "^::" >> "$GITHUB_STEP_SUMMARY"
         fi
 
         # Generate safe remediation diff if requested and hazards were found
-        if [ "${{ inputs.suggest-fixes }}" = "true" ] && [ "$PASSED" = "FAILED" ]; then
-          DIFF_OUT=$(safemigrate fix "$TARGET_PATH" --dialect "${{ inputs.dialect }}" --diff || true)
+        if [ "$INPUT_SUGGEST_FIXES" = "true" ] && [ "$PASSED" = "FAILED" ]; then
+          set +e
+          DIFF_OUT=$(safemigrate fix "$TARGET_PATH" --dialect "$INPUT_DIALECT" --diff)
+          set -e
           if [ -n "$DIFF_OUT" ]; then
             echo ""
             echo "::group::⚡ SafeMigrate Recommended Zero-Downtime Diff"
             echo "$DIFF_OUT"
             echo "::endgroup::"
-            if [ "${{ inputs.publish-summary }}" = "true" ] && [ -n "$GITHUB_STEP_SUMMARY" ]; then
+            if [ "$INPUT_PUBLISH_SUMMARY" = "true" ] && [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
               echo "" >> "$GITHUB_STEP_SUMMARY"
               echo "### ⚡ SafeMigrate Recommended Zero-Downtime Diff" >> "$GITHUB_STEP_SUMMARY"
               echo "" >> "$GITHUB_STEP_SUMMARY"
@@ -107,7 +122,7 @@ runs:
               echo "$DIFF_OUT" >> "$GITHUB_STEP_SUMMARY"
               echo '```' >> "$GITHUB_STEP_SUMMARY"
               echo "" >> "$GITHUB_STEP_SUMMARY"
-              echo "*Run \`safemigrate fix -i ${{ inputs.path }}\` locally to apply these safe rewrites automatically.*" >> "$GITHUB_STEP_SUMMARY"
+              printf "*Run \`safemigrate fix -i %s\` locally to apply these safe rewrites automatically.*\n" "$TARGET_PATH" >> "$GITHUB_STEP_SUMMARY"
             fi
           fi
         fi
