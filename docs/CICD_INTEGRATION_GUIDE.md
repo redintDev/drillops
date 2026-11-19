@@ -408,6 +408,74 @@ jobs:
           retention-days: 365
 ```
 
+### 7.2 GitLab CI/CD Full-Lifecycle Pipeline (`.gitlab-ci.yml`)
+
+```yaml
+stages:
+  - lint-migrations
+  - scheduled-dr
+
+# Phase 1: Pre-Deployment Migration Lock Linter
+safemigrate-mr-check:
+  stage: lint-migrations
+  image: python:3.12-slim
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends git
+    - pip install "git+https://github.com/redintDev/drillops.git#subdirectory=safemigrate"
+  script:
+    - safemigrate check migrations --dialect postgresql
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - "migrations/**/*"
+
+# Phase 2: Post-Deployment Nightly Disaster Recovery Drill
+drillops-nightly-drill:
+  stage: scheduled-dr
+  image: python:3.12-slim
+  before_script:
+    - apt-get update && apt-get install -y postgresql-client
+    - pip install "git+https://github.com/redintDev/drillops.git"
+  script:
+    - drillops verify --backup "$BACKUP_S3_URI" --type postgres --tables users,accounts --out ./certs
+    - drillops audit-pack --cert-dir ./certs --out ./certs/soc2_audit_pack.zip
+  artifacts:
+    name: soc2-cc9.1-dossier-$CI_PIPELINE_ID
+    paths:
+      - certs/soc2_audit_pack.zip
+    expire_in: 1 yr
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+```
+
+### 7.3 Bitbucket Pipelines Full-Lifecycle (`bitbucket-pipelines.yml`)
+
+```yaml
+image: python:3.12-slim
+
+pipelines:
+  pull-requests:
+    '**':
+      - step:
+          name: SafeMigrate DDL Lock Audit
+          script:
+            - apt-get update && apt-get install -y --no-install-recommends git
+            - pip install "git+https://github.com/redintDev/drillops.git#subdirectory=safemigrate"
+            - safemigrate check migrations --dialect postgresql
+
+  custom:
+    nightly-dr-drill:
+      - step:
+          name: DrillOps DR Drill & Evidence Dossier
+          script:
+            - apt-get update && apt-get install -y postgresql-client
+            - pip install "git+https://github.com/redintDev/drillops.git"
+            - drillops verify --backup $BACKUP_S3_URI --type postgres --tables users,accounts --out ./certs
+            - drillops audit-pack --cert-dir ./certs --out ./certs/soc2_audit_pack.zip
+          artifacts:
+            - certs/soc2_audit_pack.zip
+```
+
 ---
 
 ## 8. How to Present CI/CD Output to SOC 2 Auditors

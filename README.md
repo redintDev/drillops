@@ -399,17 +399,17 @@ See [`docs/COMMERCIAL_PRICING.md`](docs/COMMERCIAL_PRICING.md) for full pricing 
 
 ## 🧪 Testing
 
-The Database Reliability Suite features **285 automated unit and integration tests** (100% pass rate):
+The Database Reliability Suite features **286 automated unit and integration tests** (100% pass rate):
 ```bash
 source .venv/bin/activate
 
 # 1. Run DrillOps DR drill & compliance verification test suite (196 tests in ~31s)
 pytest tests/
 
-# 2. Run SafeMigrate DDL lock linter & AST rewrite test suite (89 tests in ~0.7s)
+# 2. Run SafeMigrate DDL lock linter & AST rewrite test suite (90 tests in ~0.7s)
 pytest projects/safemigrate/tests/
 ```
-All 285 tests pass continuously in ~32 seconds across 39 test modules.
+All 286 tests pass continuously in ~32 seconds across 39 test modules.
 
 ---
 

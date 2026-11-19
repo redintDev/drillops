@@ -3,7 +3,7 @@
 > **Zero-Downtime Database Migration Linter & Safety Auditor**  
 > Protect your production databases from lock queuing, table rewrites, and self-inflicted downtime in CI/CD pull requests.
 
-[![Tests](https://img.shields.io/badge/tests-89%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-90%20passed-brightgreen.svg)]()
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)]()
 
